@@ -1,4 +1,4 @@
-butterflyShell: main.o
+sql5300: main.o
 	g++ -L/usr/local/db6/lib -o $@ $< -ldb_cxx
 
 main.o: main.cpp
