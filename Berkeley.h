@@ -1,5 +1,7 @@
 // TODO project header here
 
+#ifndef BERKELEY_H
+#define BERKELEY_H
 
 #include <string>
 
@@ -28,9 +30,22 @@ public:
 	// returns: string of data from that block
 	std::string Read(int block);
 
+
+	// db set up error flag and string  TODO better way to do this
+	bool dbIsOk;
+	std::string dbErrors;
+
+
 private:
+
+	// BerkeleyDB objects
+	DbEnv dbEnvironment;
+	Db database;
+
 
 	// fixed parameters
 	static const int DB_BLOCK_SIZE = 4096;
 
 };
+
+#endif
