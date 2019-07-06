@@ -35,9 +35,15 @@ int main(int argc, char* argv[]) {
     // TODO Create a Berkeley DB environment in that directory using DbEnv::open with the DB_CREATE flag
 
     // TODO Have a user-input (do-while) loop prompting the user with "SQL> "
-
-    // Parse user input with SQLParser::parseSQLString, validate resulting parse tree,
-    // if valid, pass to "execute" and print resulting string to console
+    std::string sql;
+    do{
+      std::cout << "SQL> ";
+      std::cin >> sql;
+      SQLParser::SQLParserResult* result;
+      result = SQLParser::parseSQLString(sql);
+      result->isValid();
+      // TODO pass to "execute" and print resulting string to console
+    } while(sql != "quit")
 	return 0;
 
 }
