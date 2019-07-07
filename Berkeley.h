@@ -10,6 +10,10 @@
 
 // Class to provide accsess to storage with the BerkeleyDB library
 // Wraps BerkeleyDB in a more OO interface
+
+// After the example provided in the BerkeleyDB source code at:
+// (source code root)/examples/cxx/getting_started/MyDb.*
+
 class Berkeley {
 public:
 
@@ -20,7 +24,6 @@ public:
 
 	// Destructor closes DB
 	~Berkeley();
-
 
 	// Write data (as a string) to the given block in the DB file
 	// block: block number to write too
