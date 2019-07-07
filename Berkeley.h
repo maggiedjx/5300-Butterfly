@@ -16,7 +16,10 @@ public:
 	// Constructor opens a BerkeleyDB database environment (directory) and file
 	// Creates new one if not found
 	// path: directory for database environment
-	Berkeley(sts::string path);
+	Berkeley(std::string path);
+
+	// Destructor closes DB
+	~Berkeley();
 
 
 	// Write data (as a string) to the given block in the DB file
@@ -42,10 +45,9 @@ private:
 	DbEnv dbEnvironment;
 	Db database;
 
-
 	// fixed parameters
-	static const int DB_BLOCK_SIZE = 4096;
-
+	static const int DB_BLOCK_SIZE;
+	static const std::string DB_FILENAME;
 };
 
 #endif
