@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 	hsql::SQLParserResult* result = hsql::SQLParser::parseSQLString(userInput);
 	if(result->isValid()) {
 		std::string resultStr = Execute::getString(result);
-		std::cout << "Results: " << resultStr << std::endl;
+		std::cout << "Results: " << std::endl << resultStr << std::endl;
 	}
 	else
 		std::cout << "Invalid parse results..." << std::endl;

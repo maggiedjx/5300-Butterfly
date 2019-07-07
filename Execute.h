@@ -18,6 +18,14 @@ public:
 	static std::string getString(hsql::SQLParserResult* parseTree);
 
 private:
+	
+	// unparse CREATE statements
+	static std::string unparseCreate(hsql::CreateStatement* statement);
+
+	// unparse SELECT statments
+	static std::string unparseSelect(hsql::SelectStatement* statement);
+
+
 };
 
 
