@@ -6,7 +6,9 @@ const int Berkeley::DB_BLOCK_SIZE = 4096;
 
 
 // TODO: suppress error (cerr (?) output - possible / desired?)
-Berkeley::Berkeley(std::string filepath) {
+// Note use of member intializer list as DbEnv and Db can't be assigned with =
+Berkeley::Berkeley(std::string filepath) : 
+	dbEnvironment(0U), database(&dbEnvironment,0) {
 
 	// Open the enviroment and the (single, for now) database
 	// For opening environemnt and db use the DB_CREATE flag to create if no previous one exists
@@ -15,7 +17,7 @@ Berkeley::Berkeley(std::string filepath) {
 	// Open the database environment
 	// https://docs.oracle.com/cd/E17076_05/html/gsg/CXX/CoreEnvUsage.html
 	// DB_INIT_MPOOL is to "initialize the in-memory cache"
-	dbEnvironment = DbEnv(0U); // Needs 0 unsigned paramater - why *see doc above*
+	// dbEnvironment = DbEnv(0U); // Needs 0 unsigned paramater - why *see doc above* TODO
 	try {
 		dbEnvironment.open(filepath.c_str(), DB_CREATE | DB_INIT_MPOOL, 0);
 	}
@@ -36,10 +38,10 @@ Berkeley::Berkeley(std::string filepath) {
 	}
 
 	// Open the database
-	Db database(&dbEnvironment,0);
+	// Db database(&dbEnvironment,0); // TODO
 	database.set_re_len(DB_BLOCK_SIZE); // Record length as per Kevin's example
 	try {
-		database.open(NULL,DB_FILENAME,NULL, DB_RECNO, DB_CREATE, 0644); // Just using the octal 644 flag for user permisions from Kevin's example - what is the reasoning behing this - why is the default 0 not good enough?
+		database.open(NULL,DB_FILENAME.c_str(),NULL, DB_RECNO, DB_CREATE, 0644); // Just using the octal 644 flag for user permisions from Kevin's example - what is the reasoning behing this - why is the default 0 not good enough?
 	}
 	catch(DbException &excep) {
 		dbErrors =  "Failure opening database file at " + filepath + "/" + DB_FILENAME + "\n" + 
