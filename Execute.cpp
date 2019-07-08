@@ -27,10 +27,10 @@ std::string Execute::getString(hsql::SQLParserResult* parseTree) {
 			// Cast to correct type and call appropriate unpare function
 			hsql::StatementType stateType = statement->type();
 			if(stateType == hsql::kStmtCreate) {
-				output += unparseCreate((hsql::CreateStatement*) statement);
+				output = unparseCreate((hsql::CreateStatement*) statement);
 			}
 			else if(stateType == hsql::kStmtSelect) {
-				output += unparseSelect((hsql::SelectStatement*) statement);
+				output = unparseSelect((hsql::SelectStatement*) statement);
 			}
 			// TODO: add support for additional query types (e.g. DROP TABLE)
 			else
@@ -39,9 +39,7 @@ std::string Execute::getString(hsql::SQLParserResult* parseTree) {
 			// Seperate output from each query
 			output += "\n";
 	}
-
 	return output;
-
 }
 
 std::string Execute::unparseCreate(hsql::CreateStatement* statement) {
@@ -99,6 +97,72 @@ std::string Execute::unparseCreate(hsql::CreateStatement* statement) {
 }
 
 std::string Execute::unparseSelect(hsql::SelectStatement* statement) {
+
+	std::string output = "SELECT ";
+
+	// TODO: does need to recurvivley chech on is fromTable, ... (?) are themselves select statements ?
 	
-	return "This is a select statement";
+	// list of columns to select, where each is an expression (Expr*), adding commas as needed
+	for(size_t i = 0; i < statement->selectList->size(); ++i) {
+		output += unparseExpr(statement->selectList->at(i));
+		if(i < statement->selectList->size() - 1)
+			output += ", ";	
+	}
+
+	output += " FROM ";
+	
+	// Get the referenced table, which may be a table name or even another SELECT statment
+	// have to decide what to do based on what it is
+	if(statement->fromTable->type == hsql::TableRefType::kTableName) {
+		output += statement->fromTable->getName();
+	}
+	else {
+		output += "JOIN_or_SELECT";
+	}
+	
+	
+	return output;
 }
+
+std::string Execute::unparseExpr(hsql::Expr* expr) {
+
+	std::string output;
+
+	// Get the table name if appicable ??? TODO
+	// .....
+	//
+
+	// Get table name (if any specified)
+	if(expr->hasTable()) {
+		output += expr->table;
+		output += ".";
+	}
+
+	
+	// Get the column name
+	if(expr->getName() != NULL)
+		output += expr->getName();	
+	else
+		output += "NULL_NAME";
+
+
+	
+	return output;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -24,6 +24,10 @@ private:
 	// unparse SELECT statments
 	static std::string unparseSelect(hsql::SelectStatement* statement);
 
+	// unparse hsql expressions (used inside SELECT statements)
+	// TODO: note that this is NOT complete: only those expressions needed for very
+	// basic select statements (as shown in Milesone 1 example) are implemented
+	static std::string unparseExpr(hsql::Expr* expr);
 
 };
 
