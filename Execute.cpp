@@ -3,15 +3,14 @@
 //
 //
 //See the ref .h file
-//https://github.com/klundeen/sql-parser/blob/cpsc4300/src/SQLParserResult.h
-// TODO: wish that provided an iterator for statement items!
+// sql-parser/src/SQLParserResult.h
 
 #include "Execute.h"
 
 std::string Execute::getString(hsql::SQLParserResult* parseTree) {
 	
 	if(!parseTree->isValid())
-		return "ERROR: failure to parse";
+		return "ERROR: failure to parse"; // Exception? TODO
 
 	// String to build up with output from unparsing each statment
 	std::string output;
@@ -71,8 +70,6 @@ std::string Execute::unparseCreate(hsql::CreateStatement* statement) {
 	// Get the list of column names and data types
 	for(size_t i = 0; i < statement->columns->size(); ++i) {
 		
-		// TODO: retreive key info (ColumnDefinition DefintionType enum)
-		
 		// Get column name
 		output += statement->columns->at(i)->name;
 		output += " ";
@@ -80,25 +77,28 @@ std::string Execute::unparseCreate(hsql::CreateStatement* statement) {
 		// Get column data type
 		hsql::ColumnDefinition::DataType colType = statement->columns->at(i)->type;
 		if(colType == hsql::ColumnDefinition::INT)
-			output += "INT ";
+			output += "INT";
+		else if(colType == hsql::ColumnDefinition::TEXT)
+			output += "TEXT";
+		else if(colType == hsql::ColumnDefinition::DOUBLE)
+			output += "DOUBLE";
 		else
-			output += "OTHER_TYPE "; // TODO
+			output += "OTHER_TYPE";
 
-		// TODO comma seperation
+		// comma seperation, not on last column
+		if(i < statement->columns->size() - 1)
+			output += ", ";
 	}
 
 	// End of column list
 	output += ")";
 		
 
-	// TODO note ignoring internal SelectStatement* for now!
-
+	// TODO note ignoring key info and internal SelectStatement* for now!
 	return output;
 }
 
 std::string Execute::unparseSelect(hsql::SelectStatement* statement) {
 	
-
-
 	return "This is a select statement";
 }
