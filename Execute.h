@@ -10,7 +10,6 @@
 // Include SQL parser that was adapted from Hyrise
 #include "SQLParser.h"
 
-
 class Execute {
 public:
 

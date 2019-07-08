@@ -46,9 +46,59 @@ std::string Execute::getString(hsql::SQLParserResult* parseTree) {
 }
 
 std::string Execute::unparseCreate(hsql::CreateStatement* statement) {
-	return "This is a create statement";
+	
+	// string to build with statement
+	std::string output;
+
+	// What type of object is being created - enum contained inside hsql CreateStatement struct
+	hsql::CreateStatement::CreateType type = statement->type;
+	if(type == hsql::CreateStatement::kTable)
+		output += "CREATE TABLE ";
+	else {
+		output += "ERROR: Unsupported create type (index or view)";
+		return output;
+		// TODO throw exception here?
+	}
+
+	// TODO: IF NOT EXISTS modifier...
+
+	// What is the name of the table being created?
+	output += statement->tableName;
+
+	// Start of column list
+	output += " (";
+
+	// Get the list of column names and data types
+	for(size_t i = 0; i < statement->columns->size(); ++i) {
+		
+		// TODO: retreive key info (ColumnDefinition DefintionType enum)
+		
+		// Get column name
+		output += statement->columns->at(i)->name;
+		output += " ";
+
+		// Get column data type
+		hsql::ColumnDefinition::DataType colType = statement->columns->at(i)->type;
+		if(colType == hsql::ColumnDefinition::INT)
+			output += "INT ";
+		else
+			output += "OTHER_TYPE "; // TODO
+
+		// TODO comma seperation
+	}
+
+	// End of column list
+	output += ")";
+		
+
+	// TODO note ignoring internal SelectStatement* for now!
+
+	return output;
 }
 
 std::string Execute::unparseSelect(hsql::SelectStatement* statement) {
+	
+
+
 	return "This is a select statement";
 }
