@@ -142,48 +142,47 @@ std::string Execute::unparseTable(hsql::TableRef* table) {
 	else if(table->type == hsql::TableRefType::kTableName && 
 			table->name != NULL && table->alias == NULL)
 		output += table->name;
-	// selecting from a JOIN of two tables
+	// selecting from a JOIN of two tables (explicit joins)
 	else if(table->type == hsql::TableRefType::kTableJoin && 
 				table->join != NULL) {
-		// What type of join - note table1,table2 is a CROSS JOIN which is
-		// treated differently as it has two tables afterwards and no ON expr
-		if(table->join->type == hsql::JoinType::kJoinCross) {
-			output += unparseTable(table->join->left); // recurse!
-			output += ", ";
-			output += unparseTable(table->join->right);
+		// Left, could be any table description (recurse!)
+		output += unparseTable(table->join->left);
+		// Join type descriptions
+		if(table->join->type == hsql::JoinType::kJoinLeft)
+			output += " LEFT ";
+		else if(table->join->type == hsql::JoinType::kJoinRight)
+			output += " RIGHT ";
+		else if(table->join->type == hsql::JoinType::kJoinInner)
+			//output += " INNER "; // INNER is default - don't announce?
+			output += " ";
+		else if(table->join->type == hsql::JoinType::kJoinOuter)
+			output += " OUTER ";
+		else if(table->join->type == hsql::JoinType::kJoinCross)
+			output += " CROSS "; // Just an explicit version of the cross join below?
+		// TODO would add other join types here
+		else
+			output += " OTHER_JOIN_TYPE ";
+		output += "JOIN ";
+		output += unparseTable(table->join->right);
+		output += " ON ";
+		// Join condition expression
+		output += unparseExpr(table->join->condition);	
+	}
+	// Old-style implicit cross join, e.g. SELECT * FROM table1, table2
+	else if(table->type == hsql::TableRefType::kTableCrossProduct &&
+			table->list != NULL) {
+		// Should be 2 items in vector, but to be safe...
+		for(size_t i = 0; i < table->list->size(); ++i) {
+			if(table->list->at(i) != NULL)
+				output += unparseTable(table->list->at(i)); // recurse!
+			if(i < table->list->size()-1)
+				output += ", ";
 		}
-		// Non cross-joins
-		else {
-			// Left join, could be any table description (recurse!)
-			output += unparseTable(table->join->left);
-			// Join type descriptions
-			if(table->join->type == hsql::JoinType::kJoinLeft)
-				output += " LEFT ";
-			else if(table->join->type == hsql::JoinType::kJoinRight)
-				output += " RIGHT ";
-			else if(table->join->type == hsql::JoinType::kJoinInner)
-				//output += " INNER "; // INNER is default - don't announce?
-				output += " ";
-			else if(table->join->type == hsql::JoinType::kJoinOuter)
-				output += " OUTER ";
-			// TODO would add other join types here
-			else
-				output += " OTHER_JOIN_TYPE ";
-			output += "JOIN ";
-			output += unparseTable(table->join->right);
-			output += " ON ";
-			// Join condition expression
-			output += unparseExpr(table->join->condition);
-		}
-			
 	}
 	// Results of a nested SELECT as table
 	else if(table->type == hsql::TableRefType::kTableSelect &&
 				table->select != NULL)
 		output += unparseSelect(table->select);
-	// Other TableRef struct condtions not (yet?) supported
-	else
-		output += "TABLE_SRC_NOT_SUPPORTED";
 	return output;
 }
 
