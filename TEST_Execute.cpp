@@ -16,6 +16,7 @@
 
 // List of test SQL queries
 std::string queries[] = {
+	// 'Must pass' tests from canvas
 	"create table foo (a text, b integer, c double)",
 	"select * from foo left join goober on foo.x=goober.x",
 	"select * from foo as f left join goober on f.x = goober.x",
@@ -23,9 +24,17 @@ std::string queries[] = {
 	"select a,b,g.c from foo as f, goo as g",
 	"select a,b,c from foo where foo.b > foo.c + 6",
 	"select f.a,g.b,h.c from foo as f join goober as g on f.id = g.id where f.z >1",
-	"foo bar blaz"
+	// This one should fail
+	"foo bar blaz",
+	// Additional tests, some of these should fail
+	"select a, b from foo", // most simple type of query
+	"select a+b-12.72 from foo", // simple expression with floating point, should work
+	"create table foo", // without columns, should FAIL
+	"select a.b as Ba, c.d as Cd from foo", // should show 'AS'
+	"select a, b from foo where a = c and b > d or a = d", // many part expression, should work
+	"select c, d from (select c, d from foo where c > d) as Fuu JOIN bar ON Fuu.c = bar.c" // Complex query that _should_ work
 };
-int queriesCount = 8;
+int queriesCount = 13; // TODO: REMEMBER TO UPDATE THIS WHEN ADDING TESTS TO ARRAY
 
 // Test routine
 int main() {
