@@ -7,141 +7,152 @@
 
 class SlottedPage : public DbBlock
 {  
-  public:
-  //TODO? byte order
+public:
 
-  SlottedPage(Dbt &block, BlockID block_id, bool is_new=false) : DbBlock(Dbt &block, BlockID block_id, bool is_new =false)
-  {
+  typedef u_int16_t u16;
+
+  SlottedPage::SlottedPage(Dbt &block, BlockID block_id, bool is_new) : DbBlock(block, block_id, is_new) {
+    if (is_new) {
+      this->num_records = 0;
+      this->end_free = DbBlock::BLOCK_SZ - 1;
+      put_header();
+    } else {
+      get_header(this->num_records, this->end_free);
+    }
   }
 
-  RecordID initialize_new()
+  // Add a new record to the block. Return its id.
+  RecordID SlottedPage::add(const Dbt* data) throw(DbBlockNoRoomError) {
+    if (!has_room(data->get_size()))
+      throw DbBlockNoRoomError("not enough room for new record");
+    u16 id = ++this->num_records;
+    u16 size = (u16) data->get_size();
+    this->end_free -= size;
+    u16 loc = this->end_free + 1;
+    put_header();
+    put_header(id, size, loc);
+    memcpy(this->address(loc), data->get_data(), size);
+    return id;
+  }
+
+  Dbt* SlottedPage::get(RecordID record_id)
+  {
+    //TODO
+  }
+
+  void SlottedPage::put(RecordID record_id, const Dbt &data)
   {
     // TODO
   }
 
-  RecordID add(const Dbt* data)
-  {
-    try {
-      // TODO
-    }
-    catch(...){
-      std::cout << "Insufficient space in this block.";
-    }
-  }
-
-  Dbt* get(RecordID record_id)
+  void SlottedPage::del(RecordID record_id)
   {
     //TODO
   }
 
-  void put(RecordID record_id, const Dbt &data)
+  RecordIDs* SlottedPage::ids()
   {
-    try{
-      //TODO
+    //TODO
+  }
+
+protected:
+  
+  Dbt* SlottedPage::get_header(u16 &size, u16 & loc, u16 id)
+  {
+    size = get_n(4*id, size);
+    loc = get_n(4*id +2, size);
+  }
+
+  // Store the size and offset for given id. For id of zero, store the block header.
+  void SlottedPage::put_header(RecordID id, u16 size, u16 loc) {
+    if (id == 0) { // called the put_header() version and using the default params
+      size = this->num_records;
+      loc = this->end_free;
     }
-    catch(...){
-      std::cout << "Insufficient space in this block.";
-    }
+    put_n(4*id, size);
+    put_n(4*id + 2, loc);
   }
 
-  void del(RecordID record_id)
-  {
-    //TODO
-  }
-
-  RecordIDs* ids()
-  {
-    //TODO
-  }
-
-  // TODO type?
-  Dbt* _get_header(unsigned int id = 0)
-  {
-    //TODO
-  }
-
-  void _put_header(unsigned int id = 0, unsigned int size, unsigned int loc)
+  bool SlottedPage::has_room(u16 size)
   {
     // TODO
   }
 
-  bool _has_room(unsigned int size)
-  {
-    // TODO
-  }
-
-  void _slide(unsigned int start, unsigned int end)
+  void SlottedPage::slide(u16 start, u16 end)
   {
     //TODO
   }
 
-  unsigned int _get_n(unsigned int offset)
-  {
-    // TODO
+  // Get 2-byte integer at given offset in block.
+  u16 SlottedPage::get_n(u16 offset) {
+    return *(u16*)this->address(offset);
   }
 
-  void _put_n(unsigned int offset, unsigned int n)
-  {
-    //TODO
-  }  
+  // Put a 2-byte integer at given offset in block.
+  void SlottedPage::put_n(u16 offset, u16 n) {
+    *(u16*)this->address(offset) = n;
+  }
+
+  // Make a void* pointer for a given offset into the data block.
+  void* SlottedPage::address(u16 offset) {
+    return (void*)((char*)this->block.get_data() + offset);
+  }
 
 };
 
-class TestSlottedPage
+
+class HeapFile : public DbFile
 {
 public:
 
-  void test_basics()
-  {
-    // TODO
-  }
-};
-
-class HeapFile() : public DbFile()
-{
-  // TODO : constructor?
-
-  void _db_open(unsigned int openflags = 0)
+  HeapFile(std::string name) : DbFile(name), dbfilename(""), last(0), closed(true), db(_DB_ENV, 0)
   {
 
   }
 
-  void create()
+  void HeapFile::create()
   {
 
   }
 
-  void del()
+  void HeapFile::drop()
   {
 
   }
 
-  void open()
+  void HeapFile::open()
   {
 
   }
 
-  void close()
+  void HeapFile::close()
   {
 
   }
 
-  SlottedPage get(unsigned int block_id)
+  SlottedPage* HeapFile::get(BlockID block_id)
   {
 
   }
 
-  SlottedPage get_new()
+  SlottedPage* HeapFile::get_new()
   {
 
   }
 
-  void put(unsigned int block)
+  void HeapFile::put(DbBlock* block)
   {
 
   }
 
-  BlockIDs* block_ids()
+  BlockIDs* HeapFile::block_ids()
+  {
+
+  }
+
+protected:
+
+  void HeapFile::db_open(unsigned int flags)
   {
 
   }
@@ -151,92 +162,155 @@ class HeapTable : public DbRelation
 {
 public:
 
-  void create()
+  HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes )
+  {
+
+  }  
+
+  void HeapTable::create()
   {
 
   }
 
-  void open()
+  void HeapTable::create_if_not_exists()
+  {
+    
+  }
+
+  void HeapTable::drop()
   {
 
   }
 
-  void close()
+  Handle HeapTable::insert(const ValueDict* row)
   {
 
   }
 
-  void create_if_not_exists()
+  void HeapTable::update(const Handle handle, const ValueDict* new_values)
   {
-    try {
 
+  }
+  
+  void HeapTable::del(const Handle handle)
+  {
+
+  }
+
+  Handles* HeapTable::select()
+  {
+
+  }
+
+  Handles* HeapTable::select(const ValueDict* where) {
+    Handles* handles = new Handles();
+    BlockIDs* block_ids = file.block_ids();
+    for (auto const& block_id: *block_ids) {
+      SlottedPage* block = file.get(block_id);
+      RecordIDs* record_ids = block->ids();
+      for (auto const& record_id: *record_ids)
+        handles->push_back(Handle(block_id, record_id));
+      delete record_ids;
+      delete block;
     }
-    catch(...){
+    delete block_ids;
+    return handles;
+  }
+  
+  ValueDict* HeapTable::project(Handle handle)
+  {
 
+  }
+
+  ValueDict* HeapTable::project(Handle handle, const ColumnNames* column_names)
+  {
+
+  }
+
+protected:
+  
+  ValueDict* HeapTable::validate(const ValueDict* row)
+  {
+
+  }
+
+  Handle HeapTable::append(const ValueDict* row)
+  {
+
+  }
+
+  // return the bits to go into the file
+  // caller responsible for freeing the returned Dbt and its enclosed ret->get_data().
+  Dbt* HeapTable::marshal(const ValueDict* row) {
+    char *bytes = new char[DbBlock::BLOCK_SZ]; // more than we need (we insist that one row fits into DbBlock::BLOCK_SZ)
+    uint offset = 0;
+    uint col_num = 0;
+    for (auto const& column_name: this->column_names) {
+      ColumnAttribute ca = this->column_attributes[col_num++];
+      ValueDict::const_iterator column = row->find(column_name);
+      Value value = column->second;
+      if (ca.get_data_type() == ColumnAttribute::DataType::INT) {
+        *(int32_t*) (bytes + offset) = value.n;
+        offset += sizeof(int32_t);
+      } else if (ca.get_data_type() == ColumnAttribute::DataType::TEXT) {
+        uint size = value.s.length();
+        *(u16*) (bytes + offset) = size;
+        offset += sizeof(u16);
+        memcpy(bytes+offset, value.s.c_str(), size); // assume ascii for now
+        offset += size;
+      } else {
+        throw DbRelationError("Only know how to marshal INT and TEXT");
+      }
     }
+    char *right_size_bytes = new char[offset];
+    memcpy(right_size_bytes, bytes, offset);
+    delete[] bytes;
+    Dbt *data = new Dbt(right_size_bytes, offset);
+    return data;
   }
 
-  void drop()
-  {
-
-  }
-
-  // type?
-  sometype insert(unsigned int row)
-  {
-
-  }
-
-  // param type?
-  void del(sometype handle)
-  {
-
-  }
-
-  // params??
-  void select()
-  {
-
-  }
-
-  //params??
-  sometype project()
-  {
-
-  }
-
-  sometype _validate(unsigned int row)
-  {
-
-  }
-
-  sometype _append(unsigned int row)
-  {
-
-  }
-
-  sometype _marshal(unsigned int row)
-  {
-
-  }
-
-  sometype _unmarshal(sometype data)
+  ValueDict* HeapTable::unmarshal(Dbt* data)
   {
 
   }
 
 };
 
-class TestHeapTable
-{
-  void testCreateDrop()
-  {
-
-  }
-
-  void testData()
-  {
-
-  }
-
-};
+// test function -- returns true if all tests pass
+bool test_heap_storage() {
+  ColumnNames column_names;
+  column_names.push_back("a");
+  column_names.push_back("b");
+  ColumnAttributes column_attributes;
+  ColumnAttribute ca(ColumnAttribute::INT);
+  column_attributes.push_back(ca);
+  ca.set_data_type(ColumnAttribute::TEXT);
+  column_attributes.push_back(ca);
+  HeapTable table1("_test_create_drop_cpp", column_names, column_attributes);
+  table1.create();
+  std::cout << "create ok" << std::endl;
+  table1.drop();  // drop makes the object unusable because of BerkeleyDB
+  restriction -- maybe want to fix this some day
+    std::cout << "drop ok" << std::endl;
+  HeapTable table("_test_data_cpp", column_names, column_attributes);
+  table.create_if_not_exists();
+  std::cout << "create_if_not_exsts ok" << std::endl;
+  ValueDict row;
+  row["a"] = Value(12);
+  row["b"] = Value("Hello!");
+  std::cout << "try insert" << std::endl;
+  table.insert(&row);
+  std::cout << "insert ok" << std::endl;
+  Handles* handles = table.select();
+  std::cout << "select ok " << handles->size() << std::endl;
+  ValueDict *result = table.project((*handles)[0]);
+  std::cout << "project ok" << std::endl;
+  Value value = (*result)["a"];
+  if (value.n != 12)
+    return false;
+  value = (*result)["b"];
+  if (value.s != "Hello!")
+    return false;
+  table.drop();
+  return true;
+}
