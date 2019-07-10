@@ -206,7 +206,7 @@ std::string Execute::unparseExpr(hsql::Expr* expr) {
 			output += expr->opChar;
 			output += " ";
 		}
-		// 'Non-trival' operators NOTE TODO only binary for now!
+		// 'Non-trival' operators
 		else {
 			if(expr->opType == hsql::Expr::OperatorType::NOT_EQUALS)
 				output += " <> ";
@@ -226,7 +226,7 @@ std::string Execute::unparseExpr(hsql::Expr* expr) {
 		// Right side sub-expression
 		output += unparseExpr(expr->expr2);
 	}
-	// Expression is wildcard (*) TODO what is the "correct" way to test this - is it just
+	// Expression is wildcard (*) What is the "correct" way to test this - is it just
 	// an opChar of '*' without left & right expressions - no, because OpType is none...???
 	else if(expr->getName() == NULL && expr->opType == hsql::Expr::OperatorType::NONE &&
 				!expr->isLiteral())

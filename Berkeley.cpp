@@ -1,11 +1,13 @@
+// "Project Butterfly" - CPSC 5300 / 4300 Summer 2019                                                  
+// See README.md for details 
+// THIS FILE: Implementation for Berkeley class (wrapper for BerkeleyDB)
+
 #include "Berkeley.h"
 
 const std::string Berkeley::DB_FILENAME = "ButterflyDB.db";
 const int Berkeley::DB_BLOCK_SIZE = 4096;
 
 
-
-// TODO: suppress error (cerr (?) output - possible / desired?)
 // Note use of member intializer list as DbEnv and Db can't be assigned with =
 Berkeley::Berkeley(std::string filepath) : 
 	dbEnvironment(0U), database(&dbEnvironment,0) {
@@ -17,7 +19,7 @@ Berkeley::Berkeley(std::string filepath) :
 	// Open the database environment
 	// https://docs.oracle.com/cd/E17076_05/html/gsg/CXX/CoreEnvUsage.html
 	// DB_INIT_MPOOL is to "initialize the in-memory cache"
-	// dbEnvironment = DbEnv(0U); // Needs 0 unsigned paramater - why *see doc above* TODO
+	// dbEnvironment = DbEnv(0U); // Needs 0 unsigned paramater - why *see doc above*
 	try {
 		dbEnvironment.open(filepath.c_str(), DB_CREATE | DB_INIT_MPOOL, 0);
 	}
@@ -38,7 +40,6 @@ Berkeley::Berkeley(std::string filepath) :
 	}
 
 	// Open the database
-	// Db database(&dbEnvironment,0); // TODO
 	database.set_re_len(DB_BLOCK_SIZE); // Record length as per Kevin's example
 	try {
 		database.open(NULL,DB_FILENAME.c_str(),NULL, DB_RECNO, DB_CREATE, 0644); // Just using the octal 644 flag for user permisions from Kevin's example - what is the reasoning behing this - why is the default 0 not good enough?
@@ -57,5 +58,10 @@ Berkeley::Berkeley(std::string filepath) :
 		return;
 	}
 
+	dbIsOk = true;
+}
 
+Berkeley::~Berkeley() {
+	database.close(0);
+	dbEnvironment.close(0);
 }
