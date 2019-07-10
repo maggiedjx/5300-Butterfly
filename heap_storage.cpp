@@ -210,4 +210,33 @@ public:
 
   }
 
-  // TODO _append and on
+  sometype _append(unsigned int row)
+  {
+
+  }
+
+  sometype _marshal(unsigned int row)
+  {
+
+  }
+
+  sometype _unmarshal(sometype data)
+  {
+
+  }
+
+};
+
+class TestHeapTable
+{
+  void testCreateDrop()
+  {
+
+  }
+
+  void testData()
+  {
+
+  }
+
+};
