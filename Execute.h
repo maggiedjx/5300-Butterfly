@@ -41,11 +41,18 @@ private:
 	// This DOES NOT unparse all possible valid SelectStatment structs
 	// No support for GROUP BY / aggregation (e.g. AVG) or ORDER BY
 	static std::string unparseSelect(hsql::SelectStatement* statement);
+
+	// Unparse a table refernce as used inside a SELECT statement
+	// May simply be a table name, or a join, or a nested SELECT
+	// statment.  May be called recursively!
+	// This DOES NOT support all possible valid TableRef sturcutres,
+	// only simple ones for Milestone 1
+	static std::string unparseTable(hsql::TableRef* table);
 	
 	// Unparse expressions as stored in the hsql::Expr struct
 	// Expressions are used within SELECT statments
 	// This DOES NOT unparse all possible valid Expr structs,
-	// only the simple cases that are needed for passing milestone 1 tests
+	// only the simple cases that are needed for passing Milestone 1 tests
 	static std::string unparseExpr(hsql::Expr* expr);
 
 };

@@ -27,6 +27,8 @@ std::string queries[] = {
 	// This one should fail
 	"foo bar blaz",
 	// Additional tests, some of these should fail
+	"select f.a, f.b from foo as f", // alias in table name w/o join
+	"select * from foo as f", // This one was causing segfaults, not sure why it isnt now ... 
 	"select a, b from foo", // most simple type of query
 	"select a+b-12.72 from foo", // simple expression with floating point, should work
 	"create table foo", // without columns, should FAIL
@@ -34,7 +36,7 @@ std::string queries[] = {
 	"select a, b from foo where a = c and b > d or a = d", // many part expression, should work
 	"select c, d from (select c, d from foo where c > d) as Fuu JOIN bar ON Fuu.c = bar.c" // Complex query that _should_ work
 };
-int queriesCount = 13; // TODO: REMEMBER TO UPDATE THIS WHEN ADDING TESTS TO ARRAY
+int queriesCount = 14; // TODO: REMEMBER TO UPDATE THIS WHEN ADDING TESTS TO ARRAY
 
 // Test routine
 int main() {

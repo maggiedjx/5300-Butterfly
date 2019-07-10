@@ -36,7 +36,8 @@ std::string Execute::getString(hsql::SQLParserResult* parseTree) {
 			else if(stateType == hsql::StatementType::kStmtSelect) {
 				output = unparseSelect((hsql::SelectStatement*) statement);
 			}
-			// Would add support for additional statement types here
+			// TODO Would add support for additional statement types here
+			// ALTER, INSERT, DROP, ...
 			else
 				output += "ERROR: Statment type not supported";
 	}
@@ -99,37 +100,90 @@ std::string Execute::unparseSelect(hsql::SelectStatement* statement) {
 	std::string output = "SELECT ";
 
 	// list of columns to select, where each is an expression (Expr*), adding commas as needed
-	for(size_t i = 0; i < statement->selectList->size(); ++i) {
-		output += unparseExpr(statement->selectList->at(i));
-		if(i < statement->selectList->size() - 1)
-			output += ", ";	
-	}
+	if(statement->selectList != NULL)
+		for(size_t i = 0; i < statement->selectList->size(); ++i) {
+			output += unparseExpr(statement->selectList->at(i));
+			if(i < statement->selectList->size() - 1)
+				output += ", ";	
+		}
 
 	output += " FROM ";
-	
-	// Get the referenced table, which may be a table name or even another SELECT statment
-	// have to decide what to do based on what it is (may need to recurse!)
-	if(statement->fromTable->type == hsql::TableRefType::kTableName)
-		output += statement->fromTable->getName();
-	// selecting from a JOIN of two tables
-	else if(statement->fromTable->type == hsql::TableRefType::kTableJoin) {
-		output += "JOIN_TODO";
-	}
-	// selecting from the results of a nested SELECT (note extraction of select
-	// statement type from TableRef type
-	else if(statement->fromTable->type == hsql::TableRefType::kTableSelect)
-		output += unparseSelect((hsql::SelectStatement*)statement->fromTable);
-	// TableRefType enum also has TableCrossProduct option
-	else
-		output += "TABLE_SRC_NOT_SUPPORTED";
-	
+
+	// Get table (may be a JOIN or a nested SELECT)
+	if(statement->fromTable != NULL)
+		output += unparseTable(statement->fromTable);
+
 	// Get selection condtion (WHERE clause) if any
 	if(statement->whereClause != NULL) {
 		output += " WHERE ";
 		// WHERE condition is an expression
 		output += unparseExpr(statement->whereClause);
 	}
+
+	// NOTE: no support for GROUP BY, ORDER BY, and other 'advanced' features	
+	return output;
+}
+
+std::string Execute::unparseTable(hsql::TableRef* table) {
+
+	std::string output;
+
+	// Have to decide what to do based on what table struct holds 
+	// (may need to recurse!)
 	
+	// Named table with alias
+	if(table->type == hsql::TableRefType::kTableName && 
+			table->name != NULL && table->alias != NULL) {
+		output += table->name;
+		output += " AS ";
+		output += table->alias;
+	}
+	// Simply named table
+	else if(table->type == hsql::TableRefType::kTableName && 
+			table->name != NULL && table->alias == NULL)
+		output += table->name;
+	// selecting from a JOIN of two tables
+	else if(table->type == hsql::TableRefType::kTableJoin && 
+				table->join != NULL) {
+		// What type of join - note table1,table2 is a CROSS JOIN which is
+		// treated differently as it has two tables afterwards and no ON expr
+		if(table->join->type == hsql::JoinType::kJoinCross) {
+			output += unparseTable(table->join->left); // recurse!
+			output += ", ";
+			output += unparseTable(table->join->right);
+		}
+		// Non cross-joins
+		else {
+			// Left join, could be any table description (recurse!)
+			output += unparseTable(table->join->left);
+			// Join type descriptions
+			if(table->join->type == hsql::JoinType::kJoinLeft)
+				output += " LEFT ";
+			else if(table->join->type == hsql::JoinType::kJoinRight)
+				output += " RIGHT ";
+			else if(table->join->type == hsql::JoinType::kJoinInner)
+				//output += " INNER "; // INNER is default - don't announce?
+				output += " ";
+			else if(table->join->type == hsql::JoinType::kJoinOuter)
+				output += " OUTER ";
+			// TODO would add other join types here
+			else
+				output += " OTHER_JOIN_TYPE ";
+			output += "JOIN ";
+			output += unparseTable(table->join->right);
+			output += " ON ";
+			// Join condition expression
+			output += unparseExpr(table->join->condition);
+		}
+			
+	}
+	// Results of a nested SELECT as table
+	else if(table->type == hsql::TableRefType::kTableSelect &&
+				table->select != NULL)
+		output += unparseSelect(table->select);
+	// Other TableRef struct condtions not (yet?) supported
+	else
+		output += "TABLE_SRC_NOT_SUPPORTED";
 	return output;
 }
 
