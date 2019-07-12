@@ -14,7 +14,7 @@
 #include "heap_storage.h"
 
 // Global setup parameters
-const unsigned int DB_BLOCK_SIZE = 4096;
+const unsigned int DB_BLOCK_SZ = 4096; // Don't change name!
 const char* DB_FILENAME = "Butterfly_1.db"; // Hardcoded filename!
 
 // Berkeley DB enviroment global pointer
@@ -65,7 +65,12 @@ int main(int argc, char* argv[]) {
         std::cout << "test with test_heap_storage(): " << std::endl;
         bool pass = test_heap_storage();
         std::cout << std::endl;
-        std::cout << "Test result: " << (pass ? "passed" : "failed") << std::end;
+        std::cout << "Test result: ";
+        if(pass)
+            std::cout << "pass";
+        else
+            std::cout << "fail";
+        std::cout << std::endl;
       }
       hsql::SQLParserResult* result;
       result = hsql::SQLParser::parseSQLString(sql);

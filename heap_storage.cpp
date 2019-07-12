@@ -42,7 +42,7 @@ Dbt* SlottedPage::get(RecordID record_id)
     //TODO
 }
 
-void SlottedPage::put(RecordID record_id, const Dbt &data)
+void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomError)
 {
     // TODO
 }
@@ -74,11 +74,21 @@ RecordIDs* SlottedPage::ids()
     return recs;
 }
 
-// TODO comment
+// TODO commenti
+// TODO FIXME commented out in order to get a compile -
+// fix and uncomment!
+// get_n accepts only ONE u16 parameter!
+/*
 void SlottedPage::get_header(u16 &size, u16 & loc, RecordID id)
 {
     size = get_n(4*id, size);
     loc = get_n(4*id +2, size);
+}
+*/
+// 'FAKE' function to tesk compilation and linking:
+void SlottedPage::get_header(u16& size, u16& loc, RecordID id) {
+    // do nothing real
+    size = 0; loc = 0;
 }
 
 // Store the size and offset for given id. For id of zero, store the block header.
@@ -179,10 +189,12 @@ void HeapFile::db_open(unsigned int flags)
 
 }
 
+/*
 HeapTable::HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes )
 {
 
-}  
+}
+*/
 
 void HeapTable::create()
 {
@@ -306,8 +318,7 @@ bool test_heap_storage() {
     HeapTable table1("_test_create_drop_cpp", column_names, column_attributes);
     table1.create();
     std::cout << "create ok" << std::endl;
-    table1.drop();  // drop makes the object unusable because of BerkeleyDB
-    restriction -- maybe want to fix this some day
+    table1.drop();  // drop makes the object unusable because of BerkeleyDB restriction -- maybe want to fix this some day
         std::cout << "drop ok" << std::endl;
     HeapTable table("_test_data_cpp", column_names, column_attributes);
     table.create_if_not_exists();

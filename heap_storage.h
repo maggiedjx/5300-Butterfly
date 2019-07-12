@@ -86,6 +86,9 @@ public:
 
 	virtual u_int32_t get_last_block_id() {return last;}
 
+    // Not Kevin added this (where is this actually supposed to be?
+    static const int DB_BLOCK_SZ = 4096;
+
 protected:
 	std::string dbfilename;
 	u_int32_t last;
@@ -100,7 +103,8 @@ protected:
 
 class HeapTable : public DbRelation {
 public:
-	HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes );
+	HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes ) :
+        DbRelation(table_name,column_names,column_attributes) {} // TODO FIXME Not Kevin added initialization list to get an initial compile!
 	virtual ~HeapTable() {}
 	HeapTable(const HeapTable& other) = delete;
 	HeapTable(HeapTable&& temp) = delete;
