@@ -39,10 +39,12 @@ RecordID SlottedPage::add(const Dbt* data) throw(DbBlockNoRoomError) {
 // Returns a Dbt of the given record
 Dbt* SlottedPage::get(RecordID record_id){
   u16 size, loc;
-  get_header(size, loc, record_id);
+  this->get_header(size, loc, record_id);
   if (loc == 0)
-    return; //same as python, record was deleted
-  Dbt *data = new Dbt(size, loc);
+    return nullptr; //same as python, record was deleted
+  char* rec = new char[size];
+  memcpy(rec, address(loc), size);
+  Dbt *data = new Dbt(rec, loc);
   return data;
 }
 
@@ -51,21 +53,21 @@ Dbt* SlottedPage::get(RecordID record_id){
 void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomError)
 {
   u16 size, loc;
-  get_header(size, loc, record_id);
+  this->get_header(size, loc, record_id);
   u16 new_size = data->get_size();
   if (new_size > size){
     u16 extra = new_size - size;
-    if (!has_room(extra))
+    if (!this->has_room(extra))
       throw DbBlockNoRoomError("not enough room in block");
-    slide(loc + new_size, loc + size);
+    this->slide(loc + new_size, loc + size);
     memcpy(address(loc - extra), data->get_data(), new_size);
   }
   else{
     memcpy(addres(loc), data->get_data(), new_size);
-    slide(loc + new_size, loc + size);
+    this->slide(loc + new_size, loc + size);
   }
-  get_header(size, loc, record_id);
-  put_header(record_id, size, loc);
+  this->get_header(size, loc, record_id);
+  this->put_header(record_id, size, loc);
 }
 
 // just like the python:
@@ -139,7 +141,20 @@ void SlottedPage::slide(u16 start, u16 end)
   u16 shift = end - start;
   if (shift == 0)
     return;
-  // Not sure about this part? May need a new Dbt?
+  // may need abs() around shift to stop errors?
+  memcpy(address(this->end_free + 1), address(this->end_free + 1 + shift), shift);
+  RecordIDs* ids = this->ids();
+  for (u16 id : *ids){
+    u16 size, loc;
+    this->get_header(size, loc, id);
+    if (loc <= start){
+      loc += shift;
+      put_header(id, size, loc);
+    }
+    this->end_free += shift;
+    put_header();
+  }
+  delete ids;
 }
 
 // Get 2-byte integer at given offset in block.
@@ -162,6 +177,9 @@ void* SlottedPage::address(u16 offset) {
 
 void HeapFile::create()
 {
+  this->db_open();
+  SlottedPage* block = this->get_new();
+  this->put(block);
 
 }
 
