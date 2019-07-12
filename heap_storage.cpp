@@ -51,23 +51,21 @@ Dbt* SlottedPage::get(RecordID record_id){
 void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomError)
 {
   u16 size, loc;
-  this->get_header(size, loc, record_id);
+  get_header(size, loc, record_id);
   u16 new_size = data->get_size();
   if (new_size > size){
     u16 extra = new_size - size;
     if (!has_room(extra))
       throw DbBlockNoRoomError("not enough room in block");
-    this->slide(loc + new_size, loc + size);
-    // not sure about this step?
-    data = Dbt(loc - extra, loc + new_size);
+    slide(loc + new_size, loc + size);
+    memcpy(address(loc - extra), data->get_data(), new_size);
   }
   else{
-    // again, not sure here?
-    data = Dbt(loc, loc + new_size);
-    this->slide(loc + new_size, loc + size);
+    memcpy(addres(loc), data->get_data(), new_size);
+    slide(loc + new_size, loc + size);
   }
-  this->get_header(size, loc, record_id);
-  this->put_header(record_id, size, loc);
+  get_header(size, loc, record_id);
+  put_header(record_id, size, loc);
 }
 
 // just like the python:
