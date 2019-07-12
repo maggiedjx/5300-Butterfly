@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <cstring> // for memcpy, memset
 #include "db_cxx.h"
 #include "storage_engine.h"
 

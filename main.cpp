@@ -9,17 +9,22 @@
 #include "SQLParser.h" // Hyrise
 #include "SQLParserResult.h"
 
-#include "Berkeley.h"
-#include "Execute.h"
+#include "Execute.h" // "fake" query execution: functions for unparsing queries
+
+#include "heap_storage.h"
 
 // Global setup parameters
 const unsigned int DB_BLOCK_SIZE = 4096;
 const char* DB_FILENAME = "Butterfly_1.db"; // Hardcoded filename!
 
+// Berkeley DB enviroment global pointer
+// Need for test_heap_storage to get environment
+DbEnv* _DB_ENV;
+
 int main(int argc, char* argv[]) {
 
 	// Get filepath for db file from command line argument
-	std::string filepath;
+	char* filepath;
 	switch(argc) {
 	case 1:
 		std::cout << "Error: please specifiy database file path" << std::endl;
@@ -28,30 +33,46 @@ int main(int argc, char* argv[]) {
 		filepath = argv[1];
 		break;
 	case 3:
-		std::cout << "Error: unxecpected arguments" << std::endl;
+		std::cout << "Error: too many arguments" << std::endl;
 		return -1;
 	}
 
-	// Set up DB environment
-	Berkeley berk(filepath);
-	if(berk.dbIsOk)
-		std::cout << "running with database environment at " << filepath << std::endl;
-	else {
-		std::cout << "ERROR setting up database environment: " << std::endl;
-		std::cout << berk.dbErrors << std::endl;
-		return -1;
-	}
-	
+    // Set up Berkeley DB
+
+    // DB environment
+    DbEnv dbEnvironment(0U);
+    try { 
+        dbEnvironment.open(filepath, DB_CREATE | DB_INIT_MPOOL, 0);
+    }
+    catch(DbException& e) {
+        std::cerr << "Failure to open DB environment: " << e.what() << std::endl;
+        return -1;
+    }
+    catch(std::exception& e) { // BerkeleyDB can also throw std::exception 
+        std::cerr << "std::exception failure: " << e.what() << std::endl;
+        return -1;
+    }
+    _DB_ENV = &dbEnvironment;
+
+
     // Main SQL prompt loop
     std::string sql;
-    do{
-		sql = "";
+    do{ 
+      sql = "";
       std::cout << "SQL> ";
       std::getline(std::cin,sql); // not cin >> because need to get including spaces!
+      if(sql == "test") {
+        std::cout << "test with test_heap_storage(): " << std::endl;
+        bool pass = test_heap_storage();
+        std::cout << std::endl;
+        std::cout << "Test result: " << (pass ? "passed" : "failed") << std::end;
+      }
       hsql::SQLParserResult* result;
       result = hsql::SQLParser::parseSQLString(sql);
       if(result->isValid())
 			std::cout << Execute::getString(result) << std::endl;
+      delete result;
+
     } while(sql != "quit");
 	return 0;
 }

@@ -33,7 +33,7 @@ RecordID SlottedPage::add(const Dbt* data) throw(DbBlockNoRoomError) {
     u16 loc = this->end_free + 1;
     put_header();
     put_header(id, size, loc);
-    memcpy(this->address(loc), data->get_data(), size);
+    std::memcpy(this->address(loc), data->get_data(), size);
     return id;
 }
 
@@ -60,13 +60,22 @@ void SlottedPage::del(RecordID record_id)
     this->slide(loc, loc + size);
 }
 
+// Note need for function caller to free memory!
 RecordIDs* SlottedPage::ids()
 {
-    //TODO
+    RecordIDs* recs = new RecordIDs();
+    for(RecordID i = 0; i < this->num_records; ++i) {
+       // Only add IDs of non-deleted records
+       u16 size, loc;
+       this->get_header(size,loc,i);
+       if(size == 0 && loc == 0) // Is deleted
+           recs->push_back(i);
+    }
+    return recs;
 }
 
 // TODO comment
-Dbt* SlottedPage::get_header(u16 &size, u16 & loc, u16 id)
+void SlottedPage::get_header(u16 &size, u16 & loc, RecordID id)
 {
     size = get_n(4*id, size);
     loc = get_n(4*id +2, size);
