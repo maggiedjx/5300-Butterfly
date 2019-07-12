@@ -36,15 +36,38 @@ RecordID SlottedPage::add(const Dbt* data) throw(DbBlockNoRoomError) {
     std::memcpy(this->address(loc), data->get_data(), size);
     return id;
 }
-
-Dbt* SlottedPage::get(RecordID record_id)
-{
-    //TODO
+// Returns a Dbt of the given record
+Dbt* SlottedPage::get(RecordID record_id){
+  u16 size, loc;
+  get_header(size, loc, record_id);
+  if (loc == 0)
+    return; //same as python, record was deleted
+  Dbt *data = new Dbt(size, loc);
+  return data;
 }
 
+// puts a record in at the given record id
+// moves existing records as needed
 void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomError)
 {
-    // TODO
+  u16 size, loc;
+  this->get_header(size, loc, record_id);
+  u16 new_size = data->get_size();
+  if (new_size > size){
+    u16 extra = new_size - size;
+    if (!has_room(extra))
+      throw DbBlockNoRoomError("not enough room in block");
+    this->slide(loc + new_size, loc + size);
+    // not sure about this step?
+    data = Dbt(loc - extra, loc + new_size);
+  }
+  else{
+    // again, not sure here?
+    data = Dbt(loc, loc + new_size);
+    this->slide(loc + new_size, loc + size);
+  }
+  this->get_header(size, loc, record_id);
+  this->put_header(record_id, size, loc);
 }
 
 // just like the python:
@@ -68,6 +91,7 @@ RecordIDs* SlottedPage::ids()
        // Only add IDs of non-deleted records
        u16 size, loc;
        this->get_header(size,loc,i);
+       // should these "==" be "!="?
        if(size == 0 && loc == 0) // Is deleted
            recs->push_back(i);
     }
@@ -78,18 +102,22 @@ RecordIDs* SlottedPage::ids()
 // TODO FIXME commented out in order to get a compile -
 // fix and uncomment!
 // get_n accepts only ONE u16 parameter!
-/*
+// get_header, not get_n, worked on this with Lundeen
+// so I think its right, sorry for lack of comments
 void SlottedPage::get_header(u16 &size, u16 & loc, RecordID id)
 {
     size = get_n(4*id, size);
     loc = get_n(4*id +2, size);
 }
-*/
+
+
 // 'FAKE' function to tesk compilation and linking:
+/*
 void SlottedPage::get_header(u16& size, u16& loc, RecordID id) {
     // do nothing real
     size = 0; loc = 0;
 }
+*/
 
 // Store the size and offset for given id. For id of zero, store the block header.
 // Provided on Milestone 2 Canvas page
@@ -110,7 +138,10 @@ bool SlottedPage::has_room(u16 size)
 
 void SlottedPage::slide(u16 start, u16 end)
 {
-    //TODO
+  u16 shift = end - start;
+  if (shift == 0)
+    return;
+  // Not sure about this part? May need a new Dbt?
 }
 
 // Get 2-byte integer at given offset in block.
@@ -153,7 +184,7 @@ void HeapFile::close()
 
 SlottedPage* HeapFile::get(BlockID block_id)
 {
-
+  
 }
 
 // Allocate a new block for the database file.
@@ -176,12 +207,17 @@ SlottedPage* HeapFile::get_new(void) {
 
 void HeapFile::put(DbBlock* block)
 {
-
+  
 }
 
+// returns a vector of all block ids
+// unsure if this is correct
 BlockIDs* HeapFile::block_ids()
 {
-
+  BlockIDs* pages = new BlockIDs();
+  for(RecordID i = 0; i < this->last + 1; ++i)
+    pages->push_back(i);
+  return pages;    
 }
 
 void HeapFile::db_open(unsigned int flags)
