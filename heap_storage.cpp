@@ -10,6 +10,7 @@
 #include "heap_storage.h"
 
 typedef u_int16_t u16;
+const unsigned int BLOCK_SZ = 4096;
 
 // Provided on Milestone 2 Canvas page
 SlottedPage::SlottedPage(Dbt &block, BlockID block_id, bool is_new) : DbBlock(block, block_id, is_new) {
@@ -39,13 +40,10 @@ RecordID SlottedPage::add(const Dbt* data) throw(DbBlockNoRoomError) {
 // Returns a Dbt of the given record
 Dbt* SlottedPage::get(RecordID record_id){
   u16 size, loc;
-  this->get_header(size, loc, record_id);
+  get_header(size, loc, record_id);
   if (loc == 0)
     return nullptr; //same as python, record was deleted
-  char* rec = new char[size];
-  memcpy(rec, address(loc), size);
-  Dbt *data = new Dbt(rec, loc);
-  return data;
+  return new Dbt(this->address(loc), size);
 }
 
 // puts a record in at the given record id
@@ -53,21 +51,21 @@ Dbt* SlottedPage::get(RecordID record_id){
 void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomError)
 {
   u16 size, loc;
-  this->get_header(size, loc, record_id);
+  get_header(size, loc, record_id);
   u16 new_size = data->get_size();
   if (new_size > size){
     u16 extra = new_size - size;
-    if (!this->has_room(extra))
+    if (!has_room(extra))
       throw DbBlockNoRoomError("not enough room in block");
-    this->slide(loc + new_size, loc + size);
-    std::memcpy(address(loc - extra), data->get_data(), new_size);
+    slide(loc, loc - extra);
+    memcpy(this->address(loc - extra), data->get_data(), new_size);
   }
   else{
-    std::memcpy(addres(loc), data->get_data(), new_size);
-    this->slide(loc + new_size, loc + size);
+    memcpy(addres(loc), data->get_data(), new_size);
+    slide(loc + new_size, loc + size);
   }
-  this->get_header(size, loc, record_id);
-  this->put_header(record_id, size, loc);
+  get_header(size, loc, record_id);
+  put_header(record_id, size, loc);
 }
 
 // just like the python:
@@ -78,9 +76,9 @@ void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomEr
 void SlottedPage::del(RecordID record_id)
 {
     u16 size, loc;
-    this->get_header(size,loc,record_id);
-    this->put_header(record_id,0,0);
-    this->slide(loc, loc + size);
+    get_header(size,loc,record_id);
+    put_header(record_id,0,0);
+    slide(loc, loc + size);
 }
 
 // Note need for function caller to free memory!
@@ -92,7 +90,8 @@ RecordIDs* SlottedPage::ids()
        u16 size, loc;
        this->get_header(size,loc,i);
        // should these "==" be "!="?
-       if(size == 0 && loc == 0) // Is deleted
+       // maybe only need loc != 0?
+       if(size != 0 && loc != 0) // Is deleted
            recs->push_back(i);
     }
     return recs;
@@ -136,13 +135,13 @@ bool SlottedPage::has_room(u16 size)
     return size <= (end_free - (num_records + 1)*4);
 }
 
+// unsure about this...
 void SlottedPage::slide(u16 start, u16 end)
 {
   u16 shift = end - start;
   if (shift == 0)
     return;
-  // may need abs() around shift to stop errors?
-  std::memcpy(address(this->end_free + 1), address(this->end_free + 1 + shift), shift);
+  memcpy(address(this->end_free + 1), address(this->end_free + 1 + shift), shift);
   RecordIDs* ids = this->ids();
   for (u16 id : *ids){
     u16 size, loc;
@@ -179,7 +178,7 @@ void* SlottedPage::address(u16 offset) {
 // Heapfile class
 void HeapFile::create()
 {
-  this->db_open();
+  this->db_open(DB_CREATE | DB_EXCL);
   SlottedPage* block = this->get_new();
   this->put(block);
 }
