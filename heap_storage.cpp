@@ -200,6 +200,7 @@ SlottedPage* HeapFile::get(BlockID block_id)
   this->db.get(nullptr, &key, &data, 0);
   std::cout << "I'm at line 201" << std::endl; // TODO REMOVE
   SlottedPage* page = new SlottedPage(data, block_id, false);
+  std::cout << "I'm at line 203" << std::endl; // TODO remove
   return page;
 }
 
@@ -304,6 +305,7 @@ void HeapTable::drop()
 // just like the python example
 Handle HeapTable::insert(const ValueDict* row)
 {
+  std::cout << "I'm at 307" << std::endl; // TODO remove
   this->open();
   return this->append(this->validate(row));
 }
@@ -457,7 +459,13 @@ bool test_heap_storage() {
     std::cout << "try insert" << std::endl;
     table.insert(&row);
     std::cout << "insert ok" << std::endl;
+    
+    // Test here?
+    for(int i = 0; i < 5; ++i)
+        std::cout << "Waiting:" << i << std::endl;
+    
     Handles* handles = table.select();
+
     std::cout << "select ok " << handles->size() << std::endl;
     ValueDict *result = table.project((*handles)[0]);
     std::cout << "project ok" << std::endl;
