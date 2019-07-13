@@ -89,8 +89,11 @@ public:
 	virtual void drop(void);
 	virtual void open(void);
 	virtual void close(void);
-	virtual SlottedPage* get_new(void);
-	virtual SlottedPage* get(BlockID block_id);
+	
+    // This function uses Kevins 'hack' to let BerkeleyDB take care of memory managment
+    virtual SlottedPage* get_new(void);
+	
+    virtual SlottedPage* get(BlockID block_id);
 	virtual void put(DbBlock* block);
 	virtual BlockIDs* block_ids();
 
@@ -113,8 +116,10 @@ protected:
 
 class HeapTable : public DbRelation {
 public:
-	HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes ); // c'tor issue Grant created was here - resolved now ...
-	virtual ~HeapTable() {}
+	// This is where the ctor issue was ... TODO
+    HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes ) : 
+        DbRelation(table_name,column_names,column_attributes), file(table_name) {} // TODO what needs done for ctor?
+	virtual ~HeapTable(); // {} TODO: {} was given - implies no body needed, or...?
 	HeapTable(const HeapTable& other) = delete;
 	HeapTable(HeapTable&& temp) = delete;
 	HeapTable& operator=(const HeapTable& other) = delete;

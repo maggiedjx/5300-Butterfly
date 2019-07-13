@@ -43,7 +43,8 @@ Dbt* SlottedPage::get(RecordID record_id){
   get_header(size, loc, record_id);
   if (loc == 0)
     return nullptr; //same as python, record was deleted
-  return new Dbt(this->address(loc), size);
+  return new Dbt(this->address(loc), size); // TODO what is happening with memory managment here? search for all news and deletes and frees ...?
+//(Note that for records within blocks that are marshaled and unmarshaled by us, we still manage the memory ourselves. These operations use the Dbt structure, too, as a handy wrapper for a bunch of bytes.) TODO FIXME
 }
 
 // puts a record in at the given record id
@@ -164,11 +165,13 @@ void* SlottedPage::address(u16 offset) {
 
 
 // Heapfile class
+
 void HeapFile::create()
 {
   this->db_open(DB_CREATE | DB_EXCL);
   SlottedPage* block = this->get_new();
   this->put(block);
+  // TODO: memory lead here (what is get_new doing?) - does Kevin's 'hack' prevent this?
 }
 
 void HeapFile::drop()
@@ -243,12 +246,34 @@ void HeapFile::db_open(unsigned int flags)
 
 }
 
-/*
-  HeapTable::HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes) : DbRelation(table_name, column_names, column_attributes), file(table_name)
-{
 
+/*
+// TODO this previously problematic c'tor
+HeapTable::HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes)
+: DbRelation(table_name, column_names, column_attributes), file(table_name)
+
+{
+    
+    // TODO
+    //
+
+    //file = 
 }
 */
+
+HeapTable::~HeapTable() {
+    
+    file.close();
+    // TODO any memory to free?
+}
+
+void HeapTable::open() {
+    // TODO
+}
+
+void HeapTable::close() {
+    // TODO
+}
 
 void HeapTable::create()
 {
@@ -388,7 +413,8 @@ Dbt* HeapTable::marshal(const ValueDict* row) {
 
 ValueDict* HeapTable::unmarshal(Dbt* data)
 {
-
+    // TODO FIXME
+    // Need to do the reverse of marshal...
 }
 
 // test function -- returns true if all tests pass
