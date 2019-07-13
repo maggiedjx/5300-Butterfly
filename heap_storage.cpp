@@ -244,7 +244,7 @@ void HeapFile::db_open(unsigned int flags)
     return;
   else {
       db.open(NULL, dbfilename.c_str(),NULL,DB_RECNO,DB_CREATE,0644);
-      this->open = true;
+      this->closed = false;
   }
 }
 
