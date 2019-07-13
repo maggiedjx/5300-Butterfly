@@ -148,10 +148,10 @@ void SlottedPage::slide(u16 start, u16 end)
     this->get_header(size, loc, id);
     if (loc <= start){
       loc += shift;
-      put_header(id, size, loc);
+      this->put_header(id, size, loc);
     }
     this->end_free += shift;
-    put_header();
+    this->put_header();
   }
   delete ids;
 }
@@ -233,7 +233,7 @@ void HeapFile::put(DbBlock* block)
 BlockIDs* HeapFile::block_ids()
 {
   BlockIDs* pages = new BlockIDs();
-  for(RecordID i = 0; i < this->last + 1; ++i)
+  for(RecordID i = 0; i < this->last; ++i)
     pages->push_back(i);
   return pages;    
 }
