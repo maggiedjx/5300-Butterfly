@@ -75,7 +75,9 @@ int main(int argc, char* argv[]) {
       hsql::SQLParserResult* result;
       result = hsql::SQLParser::parseSQLString(sql);
       if(result->isValid())
-			std::cout << Execute::getString(result) << std::endl;
+        std::cout << Execute::getString(result) << std::endl;
+      else
+        std::cout << "Failed to unparse" << std::endl;
       delete result;
 
     } while(sql != "quit");
