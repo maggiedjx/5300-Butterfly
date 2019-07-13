@@ -205,7 +205,7 @@ SlottedPage* HeapFile::get(BlockID block_id)
 // Returns the new empty DbBlock that is managing the records in this block and its block id.
 // Provided on Milestone 2 Canvas page
 SlottedPage* HeapFile::get_new(void) {
-    char block[DB_BLOCK_SZ];
+    char block[BLOCK_SZ];
     std::memset(block, 0, sizeof(block));
     Dbt data(block, sizeof(block));
 
@@ -242,8 +242,10 @@ void HeapFile::db_open(unsigned int flags)
 {
   if(!this->closed)
     return;
-  
-
+  else {
+      db.open(NULL, dbfilename.c_str(),NULL,DB_RECNO,DB_CREATE,0644);
+      this->open = true;
+  }
 }
 
 

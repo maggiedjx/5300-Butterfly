@@ -78,7 +78,13 @@ protected:
  */
 class HeapFile : public DbFile {
 public:
-	HeapFile(std::string name) : DbFile(name), dbfilename(""), last(0), closed(true), db(_DB_ENV, 0) {}
+	HeapFile(std::string name) : DbFile(name), dbfilename(""), last(0), closed(true), db(_DB_ENV, 0) {
+        const char* dbPath;
+        _DB_ENV->get_home(&dbPath);
+        dbfilename += dbPath;
+        dbfilename += name;
+        std::cout << "dbPathStr:" << dbfilename << std::endl;
+    } // TODO move body to .cpp file
 	virtual ~HeapFile() {}
 	HeapFile(const HeapFile& other) = delete;
 	HeapFile(HeapFile&& temp) = delete;
@@ -98,9 +104,6 @@ public:
 	virtual BlockIDs* block_ids();
 
 	virtual u_int32_t get_last_block_id() {return last;}
-
-    // Not Kevin added this (where is this actually supposed to be?
-    static const int DB_BLOCK_SZ = 4096;
 
 protected:
 	std::string dbfilename;
