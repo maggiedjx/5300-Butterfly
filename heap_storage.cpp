@@ -242,7 +242,7 @@ void HeapFile::db_open(unsigned int flags)
 {
   if(!this->closed)
     return;
-  // TODO
+  
 
 }
 
@@ -268,11 +268,11 @@ HeapTable::~HeapTable() {
 }
 
 void HeapTable::open() {
-    // TODO
+  this->file.open();
 }
 
 void HeapTable::close() {
-    // TODO
+  this->file.open();
 }
 
 void HeapTable::create()
