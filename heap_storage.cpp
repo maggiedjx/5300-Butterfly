@@ -141,6 +141,7 @@ void SlottedPage::slide(u16 start, u16 end)
   u16 shift = end - start;
   if (shift == 0)
     return;
+  // this is the main part I'm uncertain of
   memcpy(address(this->end_free + 1), address(this->end_free + 1 + shift), shift);
   RecordIDs* ids = this->ids();
   for (u16 id : *ids){
@@ -202,7 +203,12 @@ void HeapFile::close()
 
 SlottedPage* HeapFile::get(BlockID block_id)
 {
-  
+  char block[DbBlock::BLOCK_SZ];
+  Dbt data(block, sizeof(block));
+  Dbt key(&block_id, sizeof(block_id));
+  this->db.get(nullptr, &key, &data, 0);
+  SlottedPage* page = new SlottedPage(data, block_id, false);
+  return page;
 }
 
 // Allocate a new block for the database file.
@@ -226,6 +232,10 @@ SlottedPage* HeapFile::get_new(void) {
 void HeapFile::put(DbBlock* block)
 {
   BlockID id = block->get_block_id();
+  void* data = block->get_data();
+  Dbt key(&id, sizeof(id));
+  Dbt put_data(data, BLOCK_SZ);
+  this->db.put(nullptr, &key, &put_data, 0);
 }
 
 // returns a vector of all block ids
