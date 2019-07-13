@@ -42,7 +42,7 @@ Dbt* SlottedPage::get(RecordID record_id){
   u16 size, loc;
   get_header(size, loc, record_id);
   if (loc == 0)
-    return nullptr; //same as python, record was deleted
+    return NULL; //same as python, record was deleted
   return new Dbt(this->address(loc), size); // TODO what is happening with memory managment here? search for all news and deletes and frees ...?
 //(Note that for records within blocks that are marshaled and unmarshaled by us, we still manage the memory ourselves. These operations use the Dbt structure, too, as a handy wrapper for a bunch of bytes.) TODO FIXME
 }
@@ -53,7 +53,7 @@ void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomEr
 {
   u16 size, loc;
   get_header(size, loc, record_id);
-  u16 new_size = data.get_size();
+  u16 new_size =(u16) data.get_size();
   if (new_size > size){
     u16 extra = new_size - size;
     if (!has_room(extra))
@@ -88,7 +88,7 @@ void SlottedPage::del(RecordID record_id)
 RecordIDs* SlottedPage::ids()
 {
   RecordIDs* recs = new RecordIDs();
-  u16 size, loc;
+  u16 size, loc = this->num_records;
   for(RecordID i = 0; i < this->num_records; ++i) {
      // Only add IDs of non-deleted records
      this->get_header(size,loc,i);
@@ -122,7 +122,7 @@ void SlottedPage::put_header(RecordID id, u16 size, u16 loc) {
 // just like the python
 bool SlottedPage::has_room(u16 size)
 {
-    return size <= (end_free - (num_records + 1)*4);
+    return size <= (this->end_free - (this->num_records + 1)*4);
 }
 
 // unsure about this...
@@ -139,7 +139,7 @@ void SlottedPage::slide(u16 start, u16 end)
   std::memcpy(size_arr, begin, size);
   std::memcpy(final, size_arr, size);
   RecordIDs* ids = this->ids();
-  for (u16 id : *ids){
+  for (auto  &id : *ids){
     u16 size, loc;
     this->get_header(size, loc, id);
     if (loc <= start){
@@ -150,6 +150,7 @@ void SlottedPage::slide(u16 start, u16 end)
     this->end_free += shift;
     this->put_header();
   }
+  delete size_arr;
 }
 
 // Get 2-byte integer at given offset in block.
