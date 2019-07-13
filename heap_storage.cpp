@@ -196,7 +196,9 @@ SlottedPage* HeapFile::get(BlockID block_id)
   char block[DbBlock::BLOCK_SZ];
   Dbt data(block, sizeof(block));
   Dbt key(&block_id, sizeof(block_id));
+  std::cout << "I'm at line 199" << std::endl; // TODO FIXME REMOVE
   this->db.get(nullptr, &key, &data, 0);
+  std::cout << "I'm at line 201" << std::endl; // TODO REMOVE
   SlottedPage* page = new SlottedPage(data, block_id, false);
   return page;
 }
