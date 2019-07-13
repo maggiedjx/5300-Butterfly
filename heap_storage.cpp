@@ -105,8 +105,8 @@ RecordIDs* SlottedPage::ids()
 // so I think its right, sorry for lack of comments
 void SlottedPage::get_header(u16 &size, u16 & loc, RecordID id)
 {
-    size = get_n(4*id, size);
-    loc = get_n(4*id +2, size);
+    size = this->get_n(4*id, size);
+    loc = this->get_n(4*id +2, size);
 }
 
 
@@ -271,8 +271,10 @@ void HeapTable::create()
 void HeapTable::create_if_not_exists()
 {
   try{
+    // try to open
     this->file.open();
   } catch(int e){
+    // create if open fails
     this->create();
   }
 }
@@ -282,19 +284,23 @@ void HeapTable::drop()
   this->file.drop();
 }
 
+// just like the python example
 Handle HeapTable::insert(const ValueDict* row)
 {
-
+  this->open();
+  return this->append(this->validate(row));
 }
 
+// Not supported in M<ilestone 2
 void HeapTable::update(const Handle handle, const ValueDict* new_values)
 {
 
 }
 
+// Not supported in Milestone 2
 void HeapTable::del(const Handle handle)
 {
-
+  
 }
 
 Handles* HeapTable::select()
@@ -321,7 +327,7 @@ Handles* HeapTable::select(const ValueDict* where) {
 
 ValueDict* HeapTable::project(Handle handle)
 {
-
+ 
 }
 
 ValueDict* HeapTable::project(Handle handle, const ColumnNames* column_names)
@@ -331,12 +337,35 @@ ValueDict* HeapTable::project(Handle handle, const ColumnNames* column_names)
 
 ValueDict* HeapTable::validate(const ValueDict* row)
 {
-
+  ValueDict* full_row = new ValueDict();
+  for (auto&column_name: this->column_names){
+    Value value;
+    ValueDict::const_iterator column = row->find(column_name);
+    if (column == row->end()){
+      throw DbRelationError("Error validating");
+    }else{
+      value = column->second;
+    }
+    (*full_row)[column_name] = value;
+  }
+  return full_row;    
 }
 
 Handle HeapTable::append(const ValueDict* row)
 {
-
+  Dbt* data = marshal(row);
+  SlottedPage* block = this->file.get(this->file.get_last_block_id());
+  RecordID record_id;
+  try {
+    record_id = block->add(data);
+  } catch (DbBlockNoRoomError& e){
+    block = this->file.get_new();
+    record_id = block->add(data);
+  }
+  this->file.put(block);
+  delete block;
+  delete data;
+  return Handle(this->file.get_last_block_id(), record_id);
 }
 
 // return the bits to go into the file
