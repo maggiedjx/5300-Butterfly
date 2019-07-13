@@ -230,13 +230,14 @@ void HeapFile::put(DbBlock* block)
   this->db.put(nullptr, &key, &put_data, 0);
 }
 
-// returns a vector of all block ids
-// unsure if this is correct
+// returns a ptr to a vector (BlockIDs)  of all block ids (uint16)
+// unsure if this is correct TODO
 BlockIDs* HeapFile::block_ids()
 {
   BlockIDs* pages = new BlockIDs();
-  for(RecordID i = 0; i < this->last; ++i)
+  for(RecordID i = 1; i < this->last; ++i) // TODO note start at recordID 1
     pages->push_back(i);
+  std::cout << "I am at line 240: ready to return* " << std::endl;
   return pages;    
 }
 
@@ -321,14 +322,24 @@ void HeapTable::del(const Handle handle)
 
 Handles* HeapTable::select()
 {
-
+    std::cout << "inside paramless sel" << std::cout;
+    for(long int i = 0; i < 100000000; ++i) {
+        int a = 2 + 1 + i;
+    }
+    std::cout << "done waiting" << std::endl;
+    Handles* hand = this->select(nullptr);
+    std::cout << "inner done" << std::endl;
+    return hand;
 }
 
 // TODO comment (already in header?)
 // Provided on Milestone 2 Canvas page 
 Handles* HeapTable::select(const ValueDict* where) {
+    std::cout << "I am at line 331 inside the select()" << std::endl;
     Handles* handles = new Handles();
+    std::cout << "I at line 332 in select()" << std::endl; // TODO
     BlockIDs* block_ids = file.block_ids();
+    std::cout << "I am at line 334 in select()" << std::endl; // TODO
     for (auto const& block_id: *block_ids) {
         SlottedPage* block = file.get(block_id);
         RecordIDs* record_ids = block->ids();
