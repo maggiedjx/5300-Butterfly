@@ -62,7 +62,7 @@ void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomEr
     memcpy(this->address(loc - extra), data.get_data(), new_size);
   }
   else{
-    memcpy(address(loc), data.get_data(), new_size);
+    memcpy(this->address(loc), data.get_data(), new_size);
     slide(loc + new_size, loc + size);
   }
   get_header(size, loc, record_id);
@@ -78,6 +78,8 @@ void SlottedPage::del(RecordID record_id)
 {
     u16 size, loc;
     get_header(size,loc,record_id);
+    if (loc == 0)
+      return;
     put_header(record_id,0,0);
     slide(loc, loc + size);
 }
@@ -85,17 +87,17 @@ void SlottedPage::del(RecordID record_id)
 // Note need for function caller to free memory!
 RecordIDs* SlottedPage::ids()
 {
-    RecordIDs* recs = new RecordIDs();
-    for(RecordID i = 0; i < this->num_records; ++i) {
-       // Only add IDs of non-deleted records
-       u16 size, loc;
-       this->get_header(size,loc,i);
-       // should these "==" be "!="?
-       // maybe only need loc != 0?
-       if(size != 0 && loc != 0) // Is deleted
-           recs->push_back(i);
-    }
-    return recs;
+  RecordIDs* recs = new RecordIDs();
+  u16 size, loc;
+  for(RecordID i = 0; i < this->num_records; ++i) {
+     // Only add IDs of non-deleted records
+     this->get_header(size,loc,i);
+     // should these "==" be "!="?
+     // maybe only need loc != 0?
+     if(size != 0 && loc != 0) // Is deleted
+         recs->push_back(i);
+  }
+  return recs;
 }
 
 // Get (via ref arguments) the size and location (offset) for a record id 
@@ -130,7 +132,12 @@ void SlottedPage::slide(u16 start, u16 end)
   if (shift == 0)
     return;
   // this is the main part I'm uncertain of
-  memcpy(address(this->end_free + 1), address(this->end_free + 1 + shift), shift);
+  u16 size = start - this->end_free + 1;
+  char size_arr[size];
+  void *begin = this->address((u16)(this->end_free + 1));
+  void *final = this->address((u16)(this->end_free + 1 + shift));
+  std::memcpy(size_arr, begin, size);
+  std::memcpy(final, size_arr, size);
   RecordIDs* ids = this->ids();
   for (u16 id : *ids){
     u16 size, loc;
@@ -139,10 +146,10 @@ void SlottedPage::slide(u16 start, u16 end)
       loc += shift;
       this->put_header(id, size, loc);
     }
+    delete ids;
     this->end_free += shift;
     this->put_header();
   }
-  delete ids;
 }
 
 // Get 2-byte integer at given offset in block.
@@ -171,13 +178,14 @@ void HeapFile::create()
   this->db_open(DB_CREATE | DB_EXCL);
   SlottedPage* block = this->get_new();
   this->put(block);
-  // TODO: memory lead here (what is get_new doing?) - does Kevin's 'hack' prevent this?
+  delete block;
 }
 
 void HeapFile::drop()
 {
   this->close();
-  remove(this->dbfilename.c_str());
+  // added + 3 to account for prefix in db_open
+  remove(this->dbfilename.c_str() + 3);
 }
 
 void HeapFile::open()
@@ -196,11 +204,8 @@ SlottedPage* HeapFile::get(BlockID block_id)
   char block[DbBlock::BLOCK_SZ];
   Dbt data(block, sizeof(block));
   Dbt key(&block_id, sizeof(block_id));
-  std::cout << "I'm at line 199" << std::endl; // TODO FIXME REMOVE
   this->db.get(nullptr, &key, &data, 0);
-  std::cout << "I'm at line 201" << std::endl; // TODO REMOVE
   SlottedPage* page = new SlottedPage(data, block_id, false);
-  std::cout << "I'm at line 203" << std::endl; // TODO remove
   return page;
 }
 
@@ -238,7 +243,6 @@ BlockIDs* HeapFile::block_ids()
   BlockIDs* pages = new BlockIDs();
   for(RecordID i = 1; i < this->last; ++i) // TODO note start at recordID 1
     pages->push_back(i);
-  std::cout << "I am at line 240: ready to return* " << std::endl;
   return pages;    
 }
 
@@ -246,10 +250,12 @@ void HeapFile::db_open(unsigned int flags)
 {
   if(!this->closed)
     return;
-  else {
-      db.open(NULL, dbfilename.c_str(),NULL,DB_RECNO,DB_CREATE,0644);
-      this->closed = false;
-  }
+  const char* filepath = nullptr;
+  _DB_ENV->get_home(&filepath);
+  std::string prefix = "../"; // prefix to make file dir not absolute
+  this->dbfilename = prefix + filepath + '/' + name + ".db";
+  this->db.open(nullptr, dbfilename.c_str(), nullptr, DB_RECNO, flags, 0);
+  this->closed = false;
 }
 
 
@@ -291,7 +297,7 @@ void HeapTable::create_if_not_exists()
   try{
     // try to open
     this->file.open();
-  } catch(int e){
+  } catch(DbException& e){
     // create if open fails
     this->create();
   }
@@ -305,12 +311,11 @@ void HeapTable::drop()
 // just like the python example
 Handle HeapTable::insert(const ValueDict* row)
 {
-  std::cout << "I'm at 307" << std::endl; // TODO remove
   this->open();
   return this->append(this->validate(row));
 }
 
-// Not supported in M<ilestone 2
+// Not supported in Milestone 2
 void HeapTable::update(const Handle handle, const ValueDict* new_values)
 {
 
@@ -324,31 +329,32 @@ void HeapTable::del(const Handle handle)
 
 Handles* HeapTable::select()
 {
-    std::cout << "inside paramless sel" << std::cout;
-    for(long int i = 0; i < 100000000; ++i) {
-        int a = 2 + 1 + i;
-    }
-    std::cout << "done waiting" << std::endl;
-    Handles* hand = this->select(nullptr);
-    std::cout << "inner done" << std::endl;
-    return hand;
+  Handles* handles = new Handles();
+  BlockIDs* block_ids = this->file.block_ids();
+  for (auto const& block_id: *block_ids){
+    SlottedPage* block = this->file.get(block_id);
+    RecordIDs* record_ids = block->ids();
+    for (auto const& record_id: *record_ids)
+      handles->push_back(Handle(block_id, record_id));
+    delete record_ids;
+    delete block;
+  }
+  delete block_ids;
+  return handles;
 }
 
 // TODO comment (already in header?)
 // Provided on Milestone 2 Canvas page 
 Handles* HeapTable::select(const ValueDict* where) {
-    std::cout << "I am at line 331 inside the select()" << std::endl;
     Handles* handles = new Handles();
-    std::cout << "I at line 332 in select()" << std::endl; // TODO
     BlockIDs* block_ids = file.block_ids();
-    std::cout << "I am at line 334 in select()" << std::endl; // TODO
     for (auto const& block_id: *block_ids) {
-        SlottedPage* block = file.get(block_id);
-        RecordIDs* record_ids = block->ids();
-        for (auto const& record_id: *record_ids)
-            handles->push_back(Handle(block_id, record_id));
-        delete record_ids;
-        delete block;
+      SlottedPage* block = file.get(block_id);
+      RecordIDs* record_ids = block->ids();
+      for (auto const& record_id: *record_ids)
+        handles->push_back(Handle(block_id, record_id));
+      delete record_ids;
+      delete block;
     }
     delete block_ids;
     return handles;
@@ -367,7 +373,7 @@ ValueDict* HeapTable::project(Handle handle, const ColumnNames* column_names)
 ValueDict* HeapTable::validate(const ValueDict* row)
 {
   ValueDict* full_row = new ValueDict();
-  for (auto&column_name: this->column_names){
+  for (auto& column_name: this->column_names){
     Value value;
     ValueDict::const_iterator column = row->find(column_name);
     if (column == row->end()){
@@ -393,6 +399,7 @@ Handle HeapTable::append(const ValueDict* row)
   }
   this->file.put(block);
   delete block;
+  delete[] (char*)data->get_data();
   delete data;
   return Handle(this->file.get_last_block_id(), record_id);
 }
