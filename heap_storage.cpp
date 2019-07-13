@@ -52,16 +52,16 @@ void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomEr
 {
   u16 size, loc;
   get_header(size, loc, record_id);
-  u16 new_size = data->get_size();
+  u16 new_size = data.get_size();
   if (new_size > size){
     u16 extra = new_size - size;
     if (!has_room(extra))
       throw DbBlockNoRoomError("not enough room in block");
     slide(loc, loc - extra);
-    memcpy(this->address(loc - extra), data->get_data(), new_size);
+    memcpy(this->address(loc - extra), data.get_data(), new_size);
   }
   else{
-    memcpy(addres(loc), data->get_data(), new_size);
+    memcpy(address(loc), data.get_data(), new_size);
     slide(loc + new_size, loc + size);
   }
   get_header(size, loc, record_id);
@@ -97,26 +97,13 @@ RecordIDs* SlottedPage::ids()
     return recs;
 }
 
-// TODO commenti
-// TODO FIXME commented out in order to get a compile -
-// fix and uncomment!
-// get_n accepts only ONE u16 parameter!
-// get_header, not get_n, worked on this with Lundeen
-// so I think its right, sorry for lack of comments
-void SlottedPage::get_header(u16 &size, u16 & loc, RecordID id)
+// Get (via ref arguments) the size and location (offset) for a record id 
+void SlottedPage::get_header(u16& size, u16& loc, RecordID id)
 {
-    size = this->get_n(4*id, size);
-    loc = this->get_n(4*id +2, size);
+    size = this->get_n(4*id);
+    loc = this->get_n(4*id +2);
 }
 
-
-// 'FAKE' function to tesk compilation and linking:
-/*
-void SlottedPage::get_header(u16& size, u16& loc, RecordID id) {
-    // do nothing real
-    size = 0; loc = 0;
-}
-*/
 
 // Store the size and offset for given id. For id of zero, store the block header.
 // Provided on Milestone 2 Canvas page
@@ -197,7 +184,7 @@ void HeapFile::open()
 
 void HeapFile::close()
 {
-  this->db.close();
+  this->db.close(0);
   this->closed = true;
 }
 

@@ -49,13 +49,23 @@ protected:
 	u_int16_t num_records;
 	u_int16_t end_free;
 
+    // Get a record header (size and location, via ref args) from a record number
 	virtual void get_header(u_int16_t &size, u_int16_t &loc, RecordID id=0);
-	virtual void put_header(RecordID id=0, u_int16_t size=0, u_int16_t loc=0);
-	virtual bool has_room(u_int16_t size);
-	virtual void slide(u_int16_t start, u_int16_t end);
-	virtual u_int16_t get_n(u_int16_t offset);
-	virtual void put_n(u_int16_t offset, u_int16_t n);
-	virtual void* address(u_int16_t offset);
+	
+    // Put a record header for a given record id
+    virtual void put_header(RecordID id=0, u_int16_t size=0, u_int16_t loc=0);
+	
+    virtual bool has_room(u_int16_t size);
+	
+    virtual void slide(u_int16_t start, u_int16_t end);
+	
+    // Get u16 at given offset in block
+    virtual u_int16_t get_n(u_int16_t offset);
+	
+    // Put u16 at given offset in block
+    virtual void put_n(u_int16_t offset, u_int16_t n);
+	
+    virtual void* address(u_int16_t offset);
 };
 
 /**
@@ -103,8 +113,7 @@ protected:
 
 class HeapTable : public DbRelation {
 public:
-	HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes ); //:
-//        DbRelation(table_name,column_names,column_attributes) {} // TODO FIXME Not Kevin added initialization list to get an initial compile!
+	HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes ); // c'tor issue Grant created was here - resolved now ...
 	virtual ~HeapTable() {}
 	HeapTable(const HeapTable& other) = delete;
 	HeapTable(HeapTable&& temp) = delete;
