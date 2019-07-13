@@ -133,7 +133,7 @@ void SlottedPage::slide(u16 start, u16 end)
     return;
   // this is the main part I'm uncertain of
   u16 size = start - this->end_free + 1;
-  char size_arr[size];
+  char* size_arr[size];
   void *begin = this->address((u16)(this->end_free + 1));
   void *final = this->address((u16)(this->end_free + 1 + shift));
   std::memcpy(size_arr, begin, size);
@@ -184,8 +184,6 @@ void HeapFile::create()
 void HeapFile::drop()
 {
   this->close();
-  // added + 3 to account for prefix in db_open
-  remove(this->dbfilename.c_str() + 3);
 }
 
 void HeapFile::open()
@@ -284,7 +282,7 @@ void HeapTable::open() {
 }
 
 void HeapTable::close() {
-  this->file.open();
+  this->file.close();
 }
 
 void HeapTable::create()
@@ -296,7 +294,8 @@ void HeapTable::create_if_not_exists()
 {
   try{
     // try to open
-    this->file.open();
+    this->open();
+    std::cout << "table opened" << std::endl;
   } catch(DbException& e){
     // create if open fails
     this->create();
@@ -362,24 +361,37 @@ Handles* HeapTable::select(const ValueDict* where) {
 
 ValueDict* HeapTable::project(Handle handle)
 {
- 
+  return project(handle, &this->column_names);
 }
 
 ValueDict* HeapTable::project(Handle handle, const ColumnNames* column_names)
 {
-
+  BlockID block_id = handle.first;
+  RecordID record_id = handle.second;
+  SlottedPage* this_block = file.get(block_id);
+  Dbt* this_data = this_block->get(record_id);
+  ValueDict* this_row = unmarshal(this_data);
+  if (column_names->empty())
+    return this_row;
+  ValueDict* result = new ValueDict();
+  for (auto const& col_name: *column_names){
+    if (this_row->find(col_name) == this_row->end())
+      throw DbRelationError("Column not in table");
+    (*result)[col_name] = (*this_row)[col_name];
+  }
+  return result;
 }
 
 ValueDict* HeapTable::validate(const ValueDict* row)
 {
   ValueDict* full_row = new ValueDict();
-  for (auto& column_name: this->column_names){
+  for (auto const& column_name: this->column_names){
     Value value;
     ValueDict::const_iterator column = row->find(column_name);
     if (column == row->end()){
       throw DbRelationError("Error validating");
     }else{
-      value = column->second;
+      value = row->at(column_name);
     }
     (*full_row)[column_name] = value;
   }
@@ -398,9 +410,6 @@ Handle HeapTable::append(const ValueDict* row)
     record_id = block->add(data);
   }
   this->file.put(block);
-  delete block;
-  delete[] (char*)data->get_data();
-  delete data;
   return Handle(this->file.get_last_block_id(), record_id);
 }
 
@@ -437,8 +446,31 @@ Dbt* HeapTable::marshal(const ValueDict* row) {
 
 ValueDict* HeapTable::unmarshal(Dbt* data)
 {
-    // TODO FIXME
-    // Need to do the reverse of marshal...
+  char *bytes = (char*) data->get_data();
+  ValueDict* row = new ValueDict();
+  uint offset = 0;
+  uint col_num = 0;
+  Value value;
+  for (auto const& column: this->column_names){
+    ColumnAttribute ca = this->column_attributes[col_num++];
+    value.data_type = ca.get_data_type();
+    if (ca.get_data_type() == ColumnAttribute::DataType::INT){
+      value.n = *(int32_t*)(bytes + offset);
+      offset += sizeof(int32_t);
+    } else if (ca.get_data_type() == ColumnAttribute::DataType::TEXT){
+      u16 size = *(u16*)(bytes + offset);
+      offset += sizeof(u16);
+      char buffer[DbBlock::BLOCK_SZ];
+      std::memcpy(buffer, bytes + offset, size);
+      buffer[size] = '\0';
+      value.s = std::string(buffer);
+      offset += size;
+    } else {
+      throw DbRelationError("Only INT and TEXT currently supported");
+    }
+    (*row)[column] = value;
+  }
+  return row;    
 }
 
 // test function -- returns true if all tests pass
