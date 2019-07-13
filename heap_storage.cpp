@@ -60,10 +60,10 @@ void SlottedPage::put(RecordID record_id, const Dbt &data) throw(DbBlockNoRoomEr
     if (!this->has_room(extra))
       throw DbBlockNoRoomError("not enough room in block");
     this->slide(loc + new_size, loc + size);
-    memcpy(address(loc - extra), data->get_data(), new_size);
+    std::memcpy(address(loc - extra), data->get_data(), new_size);
   }
   else{
-    memcpy(addres(loc), data->get_data(), new_size);
+    std::memcpy(addres(loc), data->get_data(), new_size);
     this->slide(loc + new_size, loc + size);
   }
   this->get_header(size, loc, record_id);
@@ -142,7 +142,7 @@ void SlottedPage::slide(u16 start, u16 end)
   if (shift == 0)
     return;
   // may need abs() around shift to stop errors?
-  memcpy(address(this->end_free + 1), address(this->end_free + 1 + shift), shift);
+  std::memcpy(address(this->end_free + 1), address(this->end_free + 1 + shift), shift);
   RecordIDs* ids = this->ids();
   for (u16 id : *ids){
     u16 size, loc;
@@ -175,27 +175,30 @@ void* SlottedPage::address(u16 offset) {
     return (void*)((char*)this->block.get_data() + offset);
 }
 
+
+// Heapfile class
 void HeapFile::create()
 {
   this->db_open();
   SlottedPage* block = this->get_new();
   this->put(block);
-
 }
 
 void HeapFile::drop()
 {
-
+  this->close();
+  remove(this->dbfilename.c_str());
 }
 
 void HeapFile::open()
 {
-
+  this->db_open();
 }
 
 void HeapFile::close()
 {
-
+  this->db.close();
+  this->closed = true;
 }
 
 SlottedPage* HeapFile::get(BlockID block_id)
@@ -223,7 +226,7 @@ SlottedPage* HeapFile::get_new(void) {
 
 void HeapFile::put(DbBlock* block)
 {
-  
+  BlockID id = block->get_block_id();
 }
 
 // returns a vector of all block ids
@@ -238,11 +241,14 @@ BlockIDs* HeapFile::block_ids()
 
 void HeapFile::db_open(unsigned int flags)
 {
+  if(!this->closed)
+    return;
+  // TODO
 
 }
 
 /*
-HeapTable::HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes )
+  HeapTable::HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes) : DbRelation(table_name, column_names, column_attributes), file(table_name)
 {
 
 }
@@ -250,17 +256,21 @@ HeapTable::HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttr
 
 void HeapTable::create()
 {
-
+  this->file.create();
 }
 
 void HeapTable::create_if_not_exists()
 {
-
+  try{
+    this->file.open();
+  } catch(int e){
+    this->create();
+  }
 }
 
 void HeapTable::drop()
 {
-
+  this->file.drop();
 }
 
 Handle HeapTable::insert(const ValueDict* row)
@@ -338,7 +348,7 @@ Dbt* HeapTable::marshal(const ValueDict* row) {
             uint size = value.s.length();
             *(u16*) (bytes + offset) = size;
             offset += sizeof(u16);
-            memcpy(bytes+offset, value.s.c_str(), size); // assume ascii for now
+            std::memcpy(bytes+offset, value.s.c_str(), size); // assume ascii for now
             offset += size;
         } else {
             throw DbRelationError("Only know how to marshal INT and TEXT");
