@@ -89,7 +89,7 @@ RecordIDs* SlottedPage::ids()
 {
   RecordIDs* recs = new RecordIDs();
   u16 size, loc = this->num_records;
-  for(RecordID i = 0; i < this->num_records; ++i) {
+  for(RecordID i = 1; i < this->num_records; ++i) {
      // Only add IDs of non-deleted records
      this->get_header(size,loc,i);
      // should these "==" be "!="?
@@ -133,7 +133,7 @@ void SlottedPage::slide(u16 start, u16 end)
     return;
   // this is the main part I'm uncertain of
   u16 size = start - this->end_free + 1;
-  char* size_arr[size];
+  char* size_arr =  new char[size];
   void *begin = this->address((u16)(this->end_free + 1));
   void *final = this->address((u16)(this->end_free + 1 + shift));
   std::memcpy(size_arr, begin, size);
