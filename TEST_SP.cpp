@@ -17,6 +17,7 @@ DbEnv* _DB_ENV;
 
 int main() {
 
+    // Not rows, test with a simpler data type to start:
     // Test data strings
     std::string test_strings[] {
         "lorem",
@@ -38,7 +39,9 @@ int main() {
     u_int32_t blockID = 1;
 
     // Create a sloted page
-    Dbt _sp_1_backing;
+    char bits1[4096/8];
+    Dbt _sp_1_backing(bits1,sizeof(bits1));
+    
     SlottedPage test_spage_1(_sp_1_backing,blockID);
 
     // Add to slotted page
