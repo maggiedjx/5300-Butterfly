@@ -24,7 +24,7 @@ DbEnv* _DB_ENV;
 int main(int argc, char* argv[]) {
 
 	// Get filepath for db file from command line argument
-	char* filepath;
+    std::string filepath = "";
 	switch(argc) {
 	case 1:
 		std::cout << "Error: please specifiy database file path" << std::endl;
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     // DB environment
     DbEnv dbEnvironment(0U);
     try { 
-        dbEnvironment.open(filepath, DB_CREATE | DB_INIT_MPOOL, 0);
+        dbEnvironment.open(filepath.c_str(), DB_CREATE | DB_INIT_MPOOL, 0);
     }
     catch(DbException& e) {
         std::cerr << "Failure to open DB environment: " << e.what() << std::endl;

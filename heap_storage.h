@@ -81,7 +81,7 @@ public:
     // Not init last to 1 - BerkelyDB record numbers start at 1!
     // https://docs.oracle.com/cd/E17276_01/html/programmer_reference/am_conf_logrec.html
 	HeapFile(std::string name) : DbFile(name), dbfilename(""), last(1), closed(true), db(_DB_ENV, 0) {
-        const char* dbPath;
+        //const char* dbPath;
         //_DB_ENV->get_home(&dbPath); // TODO fixme! - correct '/' handling
         //dbfilename += dbPath;
         dbfilename += name;
