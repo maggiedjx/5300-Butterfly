@@ -93,12 +93,23 @@ void SlottedPage::del(RecordID record_id)
 // Note: need for function caller to free memory!
 // Returns a pointer to a vector containing all
 // record ids in the given SlottedPage
+//
+// TODO FIXME SORRY
+// ERROR: durring the course of running the test_heap_storage function
+// this function is called.  The loop would be expcected to run only a few times
+// that is not what happends.  instead it gets called thousands of times, untill 
+// something (not sure exactly what) overflows or otherwise goes wrong and 
+// crashes the program with a segmentation fault
+// The reason the loop runs to many times is that num_records is a really large
+// number: 52140 to be exact (it does not change run to run)
+// This happems when the 'this' slotted page is created in HeapFile::get()
+// See comments at that function (search "SORRY") for more info
 RecordIDs* SlottedPage::ids()
 {
   RecordIDs* recs = new RecordIDs();
-  u16 size, loc = this->num_records;
-  for(RecordID i = 1; i < this->num_records; ++i) {
-     this->get_header(size,loc,i);
+  u16 size, loc;
+  for(RecordID i = 1; i <= this->num_records; ++i) { // This is the (nearly) unending loop in question
+     this->get_header(size,loc,i); // The value of num_records is anomolysly high - 52140, rather than 1 or 2
      if(size != 0 && loc != 0) // Is not deleted
          recs->push_back(i);
   }
@@ -212,6 +223,16 @@ void HeapFile::close()
 }
 
 // gets a pointer to a slotted page from the DB file
+//
+// TODO FIXME SORRY
+// This slotted page is where the erroneously high number of records 
+// (that causes the isssue above - search "SORRY")
+// comes from.  Inspecting the page SlottedPage object after creation from the 
+// data Dbt object reveals a claimed number of 52140 records
+// This is obvious not the case
+// Somehow the first header section (first 4 bytes of the slotted page)
+// is either not being stored correctly in put or not being
+// brought back out correctly in this function.
 SlottedPage* HeapFile::get(BlockID block_id)
 {
   char block[BLOCK_SZ];
@@ -278,19 +299,6 @@ void HeapFile::db_open(unsigned int flags)
 
 // HeapTable ------------------------------------------------------------------
 
-/*
-// TODO this previously problematic c'tor
-HeapTable::HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes)
-: DbRelation(table_name, column_names, column_attributes), file(table_name)
-
-{
-    
-    // TODO
-    //
-
-    //file = 
-}
-*/
 
 // Destructor 
 HeapTable::~HeapTable() {    
