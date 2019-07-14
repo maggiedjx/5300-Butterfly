@@ -122,7 +122,7 @@ void SlottedPage::put_header(RecordID id, u16 size, u16 loc) {
 // just like the python
 bool SlottedPage::has_room(u16 size)
 {
-    return size <= (this->end_free - (this->num_records + 1)*4);
+  return size <= ((u16)(this->end_free - (this->num_records + 1)*4));
 }
 
 // unsure about this...
@@ -131,7 +131,6 @@ void SlottedPage::slide(u16 start, u16 end)
   u16 shift = end - start;
   if (shift == 0)
     return;
-  // this is the main part I'm uncertain of
   u16 size = start - this->end_free + 1;
   char* size_arr =  new char[size];
   void *begin = this->address((u16)(this->end_free + 1));
@@ -296,7 +295,6 @@ void HeapTable::create_if_not_exists()
   try{
     // try to open
     this->open();
-    std::cout << "table opened" << std::endl;
   } catch(DbException& e){
     // create if open fails
     this->create();
@@ -329,18 +327,7 @@ void HeapTable::del(const Handle handle)
 
 Handles* HeapTable::select()
 {
-  Handles* handles = new Handles();
-  BlockIDs* block_ids = this->file.block_ids();
-  for (auto const& block_id: *block_ids){
-    SlottedPage* block = this->file.get(block_id);
-    RecordIDs* record_ids = block->ids();
-    for (auto const& record_id: *record_ids)
-      handles->push_back(Handle(block_id, record_id));
-    delete record_ids;
-    delete block;
-  }
-  delete block_ids;
-  return handles;
+  return select(NULL);
 }
 
 // TODO comment (already in header?)
