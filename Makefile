@@ -1,23 +1,26 @@
+# Makefile, Kevin Lundeen, Seattle University, CPSC5300, Summer 2019
+#
+CCFLAGS     = -std=c++11 -std=c++0x -Wall -Wno-c++11-compat -DHAVE_CXX_STDHEADERS -D_GNU_SOURCE -D_REENTRANT -O3 -c
+COURSE      = /usr/local/db6
+INCLUDE_DIR = $(COURSE)/include
+LIB_DIR     = $(COURSE)/lib
 
-DB_INCLUDES = /usr/local/db6/include
-DB_LIBRARIES = /usr/local/db6/lib
-OWN_DIR = ./
+# following is a list of all the compiled object files needed to build the sql5300 executable
+OBJS       = sql5300.o heap_storage.o
 
-COMPILED_OB = Execute.o heap_storage.o main.o
-QUERY_TEST_OB = TEST_Execute.o Execute.o
+# Rule for linking to create the executable
+# Note that this is the default target since it is the first non-generic one in the Makefile: $ make
+sql5300: $(OBJS)
+	g++ -L$(LIB_DIR) -o $@ $(OBJS) -ldb_cxx -lsqlparser
 
-#TODO don't actually nead every library / header and -l options (db_cxx, sqlparser) for every file,
-# e.g. main has no db_cxx dependency
+sql5300.o: heap_storage.h storage_engine.h
+heap_storage.o: heap_storage.h storage_engine.h
 
+# General rule for compilation
 %.o: %.cpp
-	g++ -I$(DB_INCLUDES) -c -O -std=c++11 -Wall -pedantic -DHAVE_CXX_STDHEADERS -D_GNU_SOURCE -D_REENTRANT -o "$@" "$^"
+	g++ -I$(INCLUDE_DIR) $(CCFLAGS) -o "$@" "$<"
 
-sql5300: $(COMPILED_OB)
-	g++ -L$(DB_LIBRARIES) -L$(OWN_DIR) -ldb_cxx -lsqlparser -o $@ $^
-
-# alternate build target: program to test unparsing of queries (Milestone 1)
-queryTest: $(QUERY_TEST_OB)
-	g++ -L$(DB_LIBRARIES) -L$(OWN_DIR) -lsqlparser -o $@ $^
-
+# Rule for removing all non-source files (so they can get rebuilt from scratch)
+# Note that since it is not the first target, you have to invoke it explicitly: $ make clean
 clean:
-	rm -f *.o
+	rm -f sql5300 *.o
