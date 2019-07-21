@@ -1,16 +1,16 @@
 # 5300-Butterfly
 ## "Project Butterfly" - CPSC 5300 / 4300 Summer 2019
-####	'relation manager' project
+< < < SQL relation manager and parser program < < <
 
-Sprint Verano:
-		- Jonathan Kimray
-		- Grant Bishop
-Sprint Otono:
-		- Your Name
-		- Your Name
-Sprint Invierno:
-		- Your Name
-		- Your Name
+#### Sprint Verano:
+Jonathan Kimray
+Grant Bishop
+#### Sprint Otono:
+Vishakha Bhavsar
+Alicia Mauldin
+#### Sprint Invierno:
+Your Name
+Your Name
 
 ---
 
@@ -42,7 +42,8 @@ Sprint Invierno:
     The program does compile, but it does not run.  the test_heap_storage function does not complete.  A segfault crashes the program.  We spent about 12 hours on Sunday (yeah poor time managment!) trying to figure out why.  We have an idea of where the probelm occurs - search for "SORRY" in heap_file.cpp to find comments associated with two functions explaining the issue so far.  Maybe fresh eyes will find the issue quickly?  We are going to office hours on Monday to get something worked out so that you, the next Team Butterfly won't be completely up a creek without a paddle.
     Since we did not finish testing, there are LIKLEY ADDITIONAL BUGS.  
 
-    - With appologies, Grant and Jon
+With appologies, 
+Grant and Jon
 
 #### Overview of code:
 
