@@ -3,13 +3,13 @@
 < < < SQL relation manager and parser program < < <
 
 #### Sprint Verano:
-Jonathan Kimray
+Jonathan Kimray &
 Grant Bishop
 #### Sprint Otono:
-Vishakha Bhavsar
+Vishakha Bhavsar &
 Alicia Mauldin
 #### Sprint Invierno:
-Your Name
+Your Name &
 Your Name
 
 ---
