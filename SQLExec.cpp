@@ -43,7 +43,10 @@ ostream &operator<<(ostream &out, const QueryResult &qres) {
 }
 
 QueryResult::~QueryResult() {
-	// FIXME
+	// TODO ensure this cleans up pointers
+    delete column_names;
+    delete column_attributes;
+    delete rows;
 }
 
 
