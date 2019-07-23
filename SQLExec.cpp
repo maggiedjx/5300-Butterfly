@@ -31,6 +31,9 @@ ostream &operator<<(ostream &out, const QueryResult &qres) {
                     case ColumnAttribute::TEXT:
                         out << "\"" << value.s << "\"";
                         break;
+					case ColumnAttribute::BOOLEAN:
+						out << (value.n == 0 ? "false" : "true");
+						break;
                     default:
                         out << "???";
                 }
@@ -58,7 +61,7 @@ QueryResult::~QueryResult() {
 
 // Intakes a SQL statement and sets the initial table if not already present
 QueryResult *SQLExec::execute(const SQLStatement *statement) throw(SQLExecError) {
-    // Initialize _tables table, if not yet present
+    // initialize _tables table, if not yet present
     if (SQLExec::tables == nullptr)
         SQLExec::tables = new Tables();
 
@@ -96,11 +99,46 @@ void SQLExec::column_definition(const ColumnDefinition *col, Identifier& column_
     }
 }
 
-// Creates a table based on SQL statement info
+// Parses which create function to call; only supports CREATE TABLE and CREATE INDEX
 QueryResult *SQLExec::create(const CreateStatement *statement) {
-    if (statement->type != CreateStatement::kTable)
-        return new QueryResult("Only CREATE TABLE is implemented");
+    switch(statement->type) {
+        case CreateStatement::kTable:
+            return create_table(statement);
+        case CreateStatement::kIndex:
+            return create_index(statement);
+        default:
+            return new QueryResult("Only CREATE TABLE and CREATE INDEX are implemented");
+    }
+}
 
+// Parses which drop function to call; only supports DROP TABLE and DROP INDEX
+QueryResult *SQLExec::drop(const DropStatement *statement) {
+    switch(statement->type) {
+        case DropStatement::kTable:
+            return drop_table(statement);
+        case DropStatement::kIndex:
+            return drop_index(statement);
+        default:
+            return new QueryResult("Only DROP TABLE and DROP INDEX are implemented");
+    }
+}
+
+// Displays list of tables, table columns, or indices
+QueryResult *SQLExec::show(const ShowStatement *statement) {
+    switch (statement->type) {
+        case ShowStatement::kTables:
+            return show_tables();
+        case ShowStatement::kColumns:
+            return show_columns(statement);
+        case ShowStatement::kIndex:
+            return show_index(statement);
+        default:
+            throw SQLExecError("unrecognized SHOW type");
+    }
+}
+
+// Create table based on SQL query info
+QueryResult *SQLExec::create_table(const CreateStatement *statement) {
     Identifier table_name = statement->tableName;
     ColumnNames column_names;
     ColumnAttributes column_attributes;
@@ -152,11 +190,8 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     return new QueryResult("created " + table_name);
 }
 
-// Drop the table
-QueryResult *SQLExec::drop(const DropStatement *statement) {
-    if (statement->type != DropStatement::kTable)
-        throw SQLExecError("unrecognized DROP type");
-
+// Drop the specified table
+QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     Identifier table_name = statement->name;
     if (table_name == Tables::TABLE_NAME || table_name == Columns::TABLE_NAME)
         throw SQLExecError("cannot drop a schema table");
@@ -181,19 +216,6 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
     SQLExec::tables->del(*SQLExec::tables->select(&where)->begin()); // expect only one row from select
 
     return new QueryResult(string("dropped ") + table_name);
-}
-
-// Displays list of tables or table columns
-QueryResult *SQLExec::show(const ShowStatement *statement) {
-    switch (statement->type) {
-        case ShowStatement::kTables:
-            return show_tables();
-        case ShowStatement::kColumns:
-            return show_columns(statement);
-        case ShowStatement::kIndex:
-        default:
-            throw SQLExecError("unrecognized SHOW type");
-    }
 }
 
 // Displays table info
@@ -245,3 +267,20 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
     return new QueryResult(column_names, column_attributes, rows,
                            "successfully returned " + to_string(n) + " rows");
 }
+
+// TODO Create an index
+QueryResult *SQLExec::create_index(const CreateStatement *statement) {
+    return new QueryResult("create index not implemented");  // FIXME
+}
+
+// TODO Displays index info
+QueryResult *SQLExec::show_index(const ShowStatement *statement) {
+    return new QueryResult("show index not implemented");  // FIXME
+}
+
+// TODO Drop the specified index
+QueryResult *SQLExec::drop_index(const DropStatement *statement) {
+    return new QueryResult("drop index not implemented");  // FIXME
+}
+
+
