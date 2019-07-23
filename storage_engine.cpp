@@ -1,3 +1,8 @@
+/**
+ * Milestone 3
+ * Extends storage_engine.h abstract functionality
+ */
+
 #include "storage_engine.h"
 
 bool Value::operator==(const Value &other) const {

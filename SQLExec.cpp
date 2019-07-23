@@ -1,4 +1,5 @@
 /**
+ * Milestone 3
  * @file SQLExec.cpp - Milestone 3: Implementation of SQLExec class 
  * @authors Kevin Lundeen, Alicia Mauldin, Vishakha Bhavsar
  * @see "Seattle University, CPSC5300, Summer 2019"

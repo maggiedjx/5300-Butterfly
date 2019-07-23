@@ -1,4 +1,5 @@
 /**
+ * Milestone 3
  * @file schema_tables.cpp - implementation of schema table classes
  * @author Kevin Lundeen
  * @see "Seattle University, CPSC5300, Summer 2018"

@@ -1,4 +1,5 @@
 /**
+ * Milestone 3
  * @file SQLExec.h - SQLExec class 
  * @author Kevin Lundeen
  * @see "Seattle University, CPSC5300, Summer 2018"
