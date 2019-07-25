@@ -268,9 +268,54 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
                            "successfully returned " + to_string(n) + " rows");
 }
 
-// TODO Create an index
+// Create an index
 QueryResult *SQLExec::create_index(const CreateStatement *statement) {
-    return new QueryResult("create index not implemented");  // FIXME
+    // Declare Identifier
+    Identifier table_name = statement->tableName;
+    Identifier index_name = statement->indexName;
+    Identifier index_type;
+    
+    bool is_unique;
+    
+    // Add to schema
+    Handles cHandles;
+    ValueDict row;
+    row["table_name"]= table_name;
+
+    try{
+	index_type = statement->indexType;
+    } catch(exception& e){
+	index_type="BTREE";
+    }
+    if(index_type == "BTREE")
+	is_unique = true;
+    else
+	is_unique = false;
+
+    row["table_name"] = table_name;
+    row["index_name"] = index_name;
+    row["seq_in_index"] = 0;
+    row["index_type"] = index_type;
+    row["is_unique"] = is_unique;	
+
+    try{
+	for(auto const& col: *statement->indexColumns){
+	    row["seq_in_index"].n += 1;
+	    row["column_name"] = string(col);
+	    cHandles.push_back(SQLExec::indices->insert(&row));
+	}	
+   
+    // Create index
+    DbIndex& index = SQLExec::indices->get_index(table_name, index_name);
+    index.create();
+    } catch(exception& e){ // Delete handles if error occurs
+	for(auto const &handle: cHandles){
+	    SQLExec::indices->del(handle);
+	}
+    throw;
+    }
+   
+    return new QueryResult("Create Index "+ index_name);
 }
 
 // TODO Displays index info
