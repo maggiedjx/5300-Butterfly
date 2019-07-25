@@ -11,6 +11,8 @@ using namespace hsql;
 
 // Define static data
 Tables* SQLExec::tables = nullptr;
+Indices* SQLExec::indices = nullptr; //for indices implementation
+
 
 // Make query result be printable
 ostream &operator<<(ostream &out, const QueryResult &qres) {
@@ -126,11 +128,11 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
 // Displays list of tables, table columns, or indices
 QueryResult *SQLExec::show(const ShowStatement *statement) {
     switch (statement->type) {
-        case ShowStatement::kTables:
+        case ShowStatement::EntityType::kTables:
             return show_tables();
-        case ShowStatement::kColumns:
+        case ShowStatement::EntityType::kColumns:
             return show_columns(statement);
-        case ShowStatement::kIndex:
+        case ShowStatement::EntityType::kIndex:
             return show_index(statement);
         default:
             throw SQLExecError("unrecognized SHOW type");
@@ -193,6 +195,11 @@ QueryResult *SQLExec::create_table(const CreateStatement *statement) {
 // Drop the specified table
 QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     Identifier table_name = statement->name;
+
+    if(statement->type != DropStatement::kTable){
+        throw SQLExecError("unrecognized DROP statement");
+    }
+
     if (table_name == Tables::TABLE_NAME || table_name == Columns::TABLE_NAME)
         throw SQLExecError("cannot drop a schema table");
 
@@ -201,6 +208,22 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
 
     // get the table
     DbRelation& table = SQLExec::tables->get_table(table_name);
+
+    //get indices table and handle
+    DbRelation& indicesTable = SQLExec::tables->get_table(Indices::TABLE_NAME);
+    Handles* h_indices = indicesTable.select(&where);  
+    //get name of indices
+    IndexNames indexID = SQLExec::indices->get_index_names(table_name);    
+
+    //Deleting indices 
+    for(auto const& handle: *h_indices)
+	indicesTable.del(handle);
+
+    // getting index name and dropping 
+    for(auto const& index_id: indexID){
+	DbIndex& index = SQLExec::indices->get_index(table_name,index_id);
+	index.drop();
+    }
 
     // remove from _columns schema
     DbRelation& columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
@@ -220,20 +243,22 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
 
 // Displays table info
 QueryResult *SQLExec::show_tables() {
+    // Set up labels/header
     ColumnNames* column_names = new ColumnNames;
     column_names->push_back("table_name");
 
     ColumnAttributes* column_attributes = new ColumnAttributes;
     column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
 
+    // Retrieve handles
     Handles* handles = SQLExec::tables->select();
-    u_long n = handles->size() - 2;
+    u_long n = handles->size() - 3; // Get size/number of rows (subtract three to account for tables, columns, and indices schemas)
 
     ValueDicts* rows = new ValueDicts;
     for (auto const& handle: *handles) {
         ValueDict* row = SQLExec::tables->project(handle, column_names);
         Identifier table_name = row->at("table_name").s;
-        if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME)
+        if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME && table_name != Indices::TABLE_NAME)
             rows->push_back(row);
     }
     delete handles;
@@ -245,6 +270,7 @@ QueryResult *SQLExec::show_tables() {
 QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
     DbRelation& columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
 
+    // Set up lables/header
     ColumnNames* column_names = new ColumnNames;
     column_names->push_back("table_name");
     column_names->push_back("column_name");
@@ -253,12 +279,13 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
     ColumnAttributes* column_attributes = new ColumnAttributes;
     column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
 
+    // Retrieve handles for this table from columns schema
     ValueDict where;
     where["table_name"] = Value(statement->tableName);
     Handles* handles = columns.select(&where);
     u_long n = handles->size();
 
-    ValueDicts* rows = new ValueDicts;
+    ValueDicts* rows = new ValueDicts;	
     for (auto const& handle: *handles) {
         ValueDict* row = columns.project(handle, column_names);
         rows->push_back(row);
@@ -323,9 +350,27 @@ QueryResult *SQLExec::show_index(const ShowStatement *statement) {
     return new QueryResult("show index not implemented");  // FIXME
 }
 
-// TODO Drop the specified index
+// Drop the specified index
 QueryResult *SQLExec::drop_index(const DropStatement *statement) {
-    return new QueryResult("drop index not implemented");  // FIXME
-}
+    // Check if statement is vaild DROP statement
+    if(statement->type != DropStatement::kIndex)
+	return new QueryResult("Unrecognized Drop Statement");
+    
+    Identifier table_name = statement->name;
+    Identifier index_name = statement->indexName;
+    DbIndex& index = SQLExec::indices->get_index(table_name, index_name);
+    ValueDict where;
+    where["table_name"] = table_name;
+    where["index_name"] = index_name;
 
+    Handles* index_handles = SQLExec::indices->select(&where);
+    index.drop();
+
+    for(unsigned int i = 0; i<index_handles->size(); i++)
+	SQLExec::indices->del(index_handles->at(i));
+
+    // Clear up memeory
+    delete index_handles;
+    return new QueryResult("Dropped Index " + index_name);
+}
 
