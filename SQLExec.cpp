@@ -231,6 +231,7 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     for (auto const& handle: *handles)
         columns.del(handle);
     delete handles;
+    delete h_indices;
 
     // remove table
     table.drop();
