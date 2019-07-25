@@ -493,7 +493,9 @@ bool HeapTable::selected(Handle handle, const ValueDict* where) {
 	if (where == nullptr)
 		return true;
 	ValueDict* row = this->project(handle, where);
-	return *row == *where;
+	bool comp =  *row == *where;
+        delete row;
+        return comp;
 }
 
 void test_set_row(ValueDict &row, int a, string b) {

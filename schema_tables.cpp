@@ -332,6 +332,7 @@ void Indices::del(Handle handle) {
         Indices::index_cache.erase(cache_key);
         delete index;
     }
+    delete row;
     HeapTable::del(handle);
 }
 
