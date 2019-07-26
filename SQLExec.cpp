@@ -1,6 +1,6 @@
 /**
- * Milestone 3
- * @file SQLExec.cpp - Milestone 3: Implementation of SQLExec class 
+ * Milestone 3 & 4 Implementations
+ * @file SQLExec.cpp 
  * @authors Kevin Lundeen, Alicia Mauldin, Vishakha Bhavsar
  * @see "Seattle University, CPSC5300, Summer 2019"
  */
@@ -33,7 +33,7 @@ ostream &operator<<(ostream &out, const QueryResult &qres) {
                     case ColumnAttribute::TEXT:
                         out << "\"" << value.s << "\"";
                         break;
-		    case ColumnAttribute::BOOLEAN:
+            case ColumnAttribute::BOOLEAN:
                         out << (value.n == 0 ? "false" : "true");
                         break;
                     default:
@@ -217,12 +217,12 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
 
     //Deleting indices 
     for(auto const& handle: *h_indices)
-	indicesTable.del(handle);
+    indicesTable.del(handle);
 
     // getting index name and dropping 
     for(auto const& index_id: indexID){
-	DbIndex& index = SQLExec::indices->get_index(table_name,index_id);
-	index.drop();
+    DbIndex& index = SQLExec::indices->get_index(table_name,index_id);
+    index.drop();
     }
 
     // remove from _columns schema
@@ -286,7 +286,7 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
     Handles* handles = columns.select(&where);
     u_long n = handles->size();
 
-    ValueDicts* rows = new ValueDicts;	
+    ValueDicts* rows = new ValueDicts;  
     for (auto const& handle: *handles) {
         ValueDict* row = columns.project(handle, column_names);
         rows->push_back(row);
@@ -298,6 +298,8 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
 
 // Create an index
 QueryResult *SQLExec::create_index(const CreateStatement *statement) {
+    SQLExec::indices = new Indices();
+
     // Declare Identifier
     Identifier table_name = statement->tableName;
     Identifier index_name = statement->indexName;
@@ -308,54 +310,83 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     // Add to schema
     Handles cHandles;
     ValueDict row;
-    row["table_name"]= table_name;
 
-    try{
-	index_type = statement->indexType;
-    } catch(exception& e){
-	index_type="BTREE";
+    try {
+      index_type = statement->indexType;
+    } catch(exception& e) {
+      index_type="BTREE";
     }
     if(index_type == "BTREE")
-	is_unique = true;
+      is_unique = true;
     else
-	is_unique = false;
+      is_unique = false;
 
     row["table_name"] = table_name;
     row["index_name"] = index_name;
     row["seq_in_index"] = 0;
     row["index_type"] = index_type;
-    row["is_unique"] = is_unique;	
+    row["is_unique"] = is_unique;   
 
     try{
-	for(auto const& col: *statement->indexColumns){
-	    row["seq_in_index"].n += 1;
-	    row["column_name"] = string(col);
-	    cHandles.push_back(SQLExec::indices->insert(&row));
-	}	
+      for(auto const& col: *statement->indexColumns){
+        row["seq_in_index"].n += 1;
+        row["column_name"] = string(col);
+        cHandles.push_back(SQLExec::indices->insert(&row));
+      } 
    
-    // Create index
-    DbIndex& index = SQLExec::indices->get_index(table_name, index_name);
-    index.create();
+      // Create index
+      DbIndex& index = SQLExec::indices->get_index(table_name, index_name);
     } catch(exception& e){ // Delete handles if error occurs
-	for(auto const &handle: cHandles){
-	    SQLExec::indices->del(handle);
-	}
-    throw;
+      for(auto const &handle: cHandles){
+        SQLExec::indices->del(handle);
+      }
+      throw;
     }
+
+    delete indices;
    
-    return new QueryResult("Create Index "+ index_name);
+    return new QueryResult("create index " + index_name);
 }
 
-// TODO Displays index info
-QueryResult *SQLExec::show_index(const ShowStatement *statement) {
-    return new QueryResult("show index not implemented");  // FIXME
+// Displays index info
+QueryResult *SQLExec::show_index(const ShowStatement *statement) {  
+    // Get table info for index
+    SQLExec::indices = new Indices();
+    ValueDict where;
+    where["table_name"] = Value(statement->tableName);
+    Handles* handles = SQLExec::indices->select(&where);
+    u_long n = handles->size();
+
+    // Create index view columns
+    ColumnNames* column_names = new ColumnNames;
+    column_names->push_back("table_name");
+    column_names->push_back("index_name");
+    column_names->push_back("seq_in_index");
+    column_names->push_back("column_name");
+    column_names->push_back("index_type");
+    column_names->push_back("is_unique");
+    ColumnAttributes* column_attributes = new ColumnAttributes;
+    column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
+
+    // Store row data in index schema
+    ValueDicts* row_data = new ValueDicts;
+    for(auto const &h : *handles) {
+        ValueDict* row = SQLExec::indices->project(h, column_names);
+        row_data->push_back(row);
+    }
+
+    // Clean up memory
+    delete handles;
+    delete indices;
+
+    return new QueryResult(column_names, column_attributes, row_data, "successfully returned " + to_string(n) + " rows");
 }
 
 // Drop the specified index
 QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     // Check if statement is vaild DROP statement
     if(statement->type != DropStatement::kIndex)
-	return new QueryResult("Unrecognized Drop Statement");
+        return new QueryResult("Unrecognized Drop Statement");
     
     Identifier table_name = statement->name;
     Identifier index_name = statement->indexName;
@@ -365,13 +396,13 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     where["index_name"] = index_name;
 
     Handles* index_handles = SQLExec::indices->select(&where);
-    index.drop();
 
     for(unsigned int i = 0; i<index_handles->size(); i++)
-	SQLExec::indices->del(index_handles->at(i));
+        SQLExec::indices->del(index_handles->at(i));
 
+    index.drop();
+    
     // Clear up memeory
     delete index_handles;
     return new QueryResult("Dropped Index " + index_name);
 }
-
