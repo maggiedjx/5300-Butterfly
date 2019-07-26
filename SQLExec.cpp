@@ -387,22 +387,28 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     // Check if statement is vaild DROP statement
     if(statement->type != DropStatement::kIndex)
         return new QueryResult("Unrecognized Drop Statement");
-    
+
+    SQLExec::indices = new Indices();
     Identifier table_name = statement->name;
     Identifier index_name = statement->indexName;
+
     DbIndex& index = SQLExec::indices->get_index(table_name, index_name);
+
     ValueDict where;
     where["table_name"] = table_name;
     where["index_name"] = index_name;
 
     Handles* index_handles = SQLExec::indices->select(&where);
 
-    for(unsigned int i = 0; i<index_handles->size(); i++)
-        SQLExec::indices->del(index_handles->at(i));
+    for(auto const &h : *index_handles) {
+        SQLExec::indices->del(h);
+    }
 
     index.drop();
     
     // Clear up memeory
     delete index_handles;
-    return new QueryResult("Dropped Index " + index_name);
+    delete indices;
+    
+    return new QueryResult("dropped index " + index_name);
 }
