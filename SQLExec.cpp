@@ -388,7 +388,6 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     if(statement->type != DropStatement::kIndex)
         return new QueryResult("Unrecognized Drop Statement");
 
-    SQLExec::indices = new Indices();
     Identifier table_name = statement->name;
     Identifier index_name = statement->indexName;
 
@@ -399,16 +398,14 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     where["index_name"] = index_name;
 
     Handles* index_handles = SQLExec::indices->select(&where);
-
+    index.drop();
+    
     for(auto const &h : *index_handles) {
         SQLExec::indices->del(h);
     }
-
-    index.drop();
     
     // Clear up memeory
     delete index_handles;
-    delete indices;
     
     return new QueryResult("dropped index " + index_name);
 }
