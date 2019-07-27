@@ -33,7 +33,7 @@ ostream &operator<<(ostream &out, const QueryResult &qres) {
                     case ColumnAttribute::TEXT:
                         out << "\"" << value.s << "\"";
                         break;
-            case ColumnAttribute::BOOLEAN:
+            	    case ColumnAttribute::BOOLEAN:
                         out << (value.n == 0 ? "false" : "true");
                         break;
                     default:
@@ -344,21 +344,12 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     
     DbIndex& index = indices->get_index(table_name, index_name);
     index.create();
-
-
-  // delete indices;
    
    return new QueryResult("create index " + index_name);
 }
 
 // Displays index info
 QueryResult *SQLExec::show_index(const ShowStatement *statement) {  
-    // Get table info for index
-    ValueDict where;
-    where["table_name"] = Value(statement->tableName);
-    Handles* handles = indices->select(&where);
-    u_long n = handles->size();
-
     // Create index view columns
     ColumnNames* column_names = new ColumnNames;
     column_names->push_back("table_name");
@@ -367,54 +358,64 @@ QueryResult *SQLExec::show_index(const ShowStatement *statement) {
     column_names->push_back("column_name");
     column_names->push_back("index_type");
     column_names->push_back("is_unique");
+    
+    Identifier table_name = statement->tableName;
+    ValueDict where;
+    where["table_name"] = Value(table_name);
+
+    Handles* handles = SQLExec::indices->select(&where);
+    ValueDicts* entries = new ValueDicts();
+
+    for(auto const& handle: *handles){
+        ValueDict* entry = SQLExec::indices->project(handle, column_names);
+        entries->push_back(entry);
+    }
+
     ColumnAttributes* column_attributes = new ColumnAttributes;
     column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
 
-    // Store row data in index schema
-    ValueDicts* row_data = new ValueDicts;
-    for(auto const &h : *handles) {
-        ValueDict* row = indices->project(h, column_names);
-        row_data->push_back(row);
-    }
+    int size = handles->size();
 
     // Clean up memory
     delete handles;
-    delete indices;
 
-    return new QueryResult(column_names, column_attributes, row_data, "successfully returned " + to_string(n) + " rows");
+    return new QueryResult(column_names, column_attributes, entries, "successfully returned " + to_string(size) + " rows");
 }
 
 // Drop the specified index 
-QueryResult *SQLExec::drop_index(const DropStatement *statement) { //FIXME
+QueryResult *SQLExec::drop_index(const DropStatement *statement) { 
     // Check if statement is vaild DROP statement
     if(statement->type != DropStatement::kIndex)
-        return new QueryResult("Unrecognized Drop Statement");
+        throw SQLExecError("Drop type is unrecognized");
 
     Identifier table_name = statement->name;
     Identifier index_name = statement->indexName;
 
-    DbIndex& index = indices->get_index(table_name, index_name);
-    index.drop();
-
     ValueDict where;
     where["table_name"] = Value(table_name);
     where["index_name"] = Value(index_name);
-    Handles* handles = indices->select(&where);
+
+    DbRelation& t_index = SQLExec::tables->get_table(Indices::TABLE_NAME);
+    Handles* handles = t_index.select(&where);
+
+    DbIndex& index = SQLExec::indices->get_index(table_name,index_name);
     
     for(auto const& handle : *handles) 
-        indices->del(handle);
-    
+        t_index.del(handle);
+
     bool failed = false;
     if(handles->size() == 0)
         failed = true;
 
     // Clear up memeory
+    index.drop();
     delete handles;
     
     if(!failed)    
         return new QueryResult("dropped index " + index_name + " from " +table_name);
     else
 	return new QueryResult("no matching index to drop");
+   //return new QueryResult("dropped index " + index_name + " from " +table_name);
 
 }
 
