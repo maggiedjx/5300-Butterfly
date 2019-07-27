@@ -342,13 +342,13 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     for(u_int i = 0; i < stmt_column_names.size(); i++) {
         row["seq_in_index"] = row["seq_in_index"].n + 1;
         row["column_name"] = stmt_column_names.at(i);
-        indices->insert(&row); //Handle i_handle = SQLExec::indices
+        indices->insert(&row);
     }
     
     DbIndex& index = indices->get_index(table_name, index_name);
     index.create();
    
-    return new QueryResult("create index " + index_name);
+    return new QueryResult("created index " + index_name);
 }
 
 // Displays index info
@@ -393,32 +393,33 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     if(statement->type != DropStatement::kIndex)
         throw SQLExecError("Drop type is unrecognized");
 
+    // Gather and set table and index names
     Identifier table_name = statement->name;
     Identifier index_name = statement->indexName;
-
     ValueDict where;
     where["table_name"] = Value(table_name);
     where["index_name"] = Value(index_name);
 
+    // Gather table and index data
     DbRelation& t_index = SQLExec::tables->get_table(Indices::TABLE_NAME);
     Handles* handles = t_index.select(&where);
-
     DbIndex& index = SQLExec::indices->get_index(table_name,index_name);
-    
+
+    // Drop index and remove references from schema
+    index.drop();
     for(auto const& handle : *handles) 
         t_index.del(handle);
 
+    // Check if index exists on given table
     bool failed = false;
     if(handles->size() == 0)
         failed = true;
 
     // Clear up memeory
-    index.drop();
     delete handles;
     
     if(!failed)    
-        return new QueryResult("dropped index " + index_name + " from "
-                               + table_name);
+        return new QueryResult("dropped index " + index_name);
     else
         return new QueryResult("no matching index to drop");
 }
