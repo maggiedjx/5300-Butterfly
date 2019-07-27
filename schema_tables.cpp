@@ -1,5 +1,5 @@
 /**
- * Milestone 4
+ * Milestone 3 & 4
  * @file schema_tables.cpp - implementation of schema table classes
  * @author Kevin Lundeen
  * @see "Seattle University, CPSC5300, Summer 2018"
@@ -15,9 +15,9 @@ void initialize_schema_tables() {
     Columns columns;
     columns.create_if_not_exists();
     columns.close();
-	Indices indices;
-	indices.create_if_not_exists();
-	indices.close();
+    Indices indices;
+    indices.create_if_not_exists();
+    indices.close();
 }
 
 // Not terribly useful since the parser weeds most of these out
@@ -84,8 +84,8 @@ void Tables::create() {
     insert(&row);
     row["table_name"] = Value("_columns");
     insert(&row);
-	row["table_name"] = Value("_indices");
-	insert(&row);
+    row["table_name"] = Value("_indices");
+    insert(&row);
 }
 
 // Manually check that table_name is unique.

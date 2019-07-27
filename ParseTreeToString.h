@@ -1,5 +1,5 @@
 /**
- * Milestone 3
+ * Milestone 3 & 4
  * @file ParseTreeToString.h - SQL unparsing class
  * @author Kevin Lundeen
  * @see "Seattle University, CPSC5300, Summer 2018"
@@ -13,25 +13,25 @@
  * @class ParseTreeToString - class for unparsing a Hyrise Abstract Syntax Tree
  */
 class ParseTreeToString {
-public:
-	/**
-	 * Unparse a Hyrise AST into an SQL statement.
-	 * @param statement  Hyrise AST pointer
-	 * @returns          string of the SQL statement equivalent to what was parsed
-	 */
+ public:
+    /**
+     * Unparse a Hyrise AST into an SQL statement.
+     * @param statement  Hyrise AST pointer
+     * @returns          string of the SQL statement equivalent to what was parsed
+     */
     static std::string statement(const hsql::SQLStatement* statement);
 
-	/**
-	 * Check if a given word is a reserved word in our version of SQL.
-	 */
+    /**
+     * Check if a given word is a reserved word in our version of SQL.
+     */
     static bool is_reserved_word(std::string word);
 
-private:
-	// reserved words
+ private:
+    // reserved words
     static const std::vector<std::string> reserved_words;
     
-	// sub-expressions
-	static std::string operator_expression(const hsql::Expr *expr);
+    // sub-expressions
+    static std::string operator_expression(const hsql::Expr *expr);
     static std::string expression(const hsql::Expr *expr);
     static std::string table_ref(const hsql::TableRef *table);
     static std::string column_definition(const hsql::ColumnDefinition *col);

@@ -1,4 +1,5 @@
 /**
+ * Miletone 3 & 4
  * @file SQLExec.h - SQLExec class 
  * @author Kevin Lundeen
  * @see "Seattle University, CPSC5300, Summer 2018"
@@ -14,7 +15,7 @@
  * @class SQLExecError - exception for SQLExec methods
  */
 class SQLExecError : public std::runtime_error {
-public:
+ public:
     explicit SQLExecError(std::string s) : runtime_error(s) {}
 };
 
@@ -23,14 +24,14 @@ public:
  * @class QueryResult - data structure to hold all the returned data for a query execution
  */
 class QueryResult {
-public:
-    QueryResult() : column_names(nullptr), column_attributes(nullptr), rows(nullptr), message("") {}
+ public:
+ QueryResult() : column_names(nullptr), column_attributes(nullptr), rows(nullptr), message("") {}
 
-    QueryResult(std::string message) : column_names(nullptr), column_attributes(nullptr), rows(nullptr),
-                                       message(message) {}
+ QueryResult(std::string message) : column_names(nullptr), column_attributes(nullptr), rows(nullptr),
+        message(message) {}
 
-    QueryResult(ColumnNames *column_names, ColumnAttributes *column_attributes, ValueDicts *rows, std::string message)
-            : column_names(column_names), column_attributes(column_attributes), rows(rows), message(message) {}
+ QueryResult(ColumnNames *column_names, ColumnAttributes *column_attributes, ValueDicts *rows, std::string message)
+     : column_names(column_names), column_attributes(column_attributes), rows(rows), message(message) {}
 
     virtual ~QueryResult();
 
@@ -40,7 +41,7 @@ public:
     const std::string &get_message() const { return message; }
     friend std::ostream &operator<<(std::ostream &stream, const QueryResult &qres);
 
-protected:
+ protected:
     ColumnNames *column_names;
     ColumnAttributes *column_attributes;
     ValueDicts *rows;
@@ -52,20 +53,20 @@ protected:
  * @class SQLExec - execution engine
  */
 class SQLExec {
-public:
-	/**
-	 * Execute the given SQL statement.
-	 * @param statement   the Hyrise AST of the SQL statement to execute
-	 * @returns           the query result (freed by caller)
-	 */
+ public:
+    /**
+     * Execute the given SQL statement.
+     * @param statement   the Hyrise AST of the SQL statement to execute
+     * @returns           the query result (freed by caller)
+     */
     static QueryResult *execute(const hsql::SQLStatement *statement) throw(SQLExecError);
 
-protected:
-	// the one place in the system that holds the _tables table and _indices table
+ protected:
+    // the one place in the system that holds the _tables table and _indices table
     static Tables *tables;
-	static Indices *indices;
+    static Indices *indices;
 
-	// recursive decent into the AST
+    // recursive decent into the AST
     static QueryResult *create(const hsql::CreateStatement *statement);
     static QueryResult *create_table(const hsql::CreateStatement *statement);
     static QueryResult *create_index(const hsql::CreateStatement *statement);
@@ -79,11 +80,11 @@ protected:
     static QueryResult *show_columns(const hsql::ShowStatement *statement);
     static QueryResult *show_index(const hsql::ShowStatement *statement);
 
-	/**
-	 * Pull out column name and attributes from AST's column definition clause
-	 * @param col                AST column definition
-	 * @param column_name        returned by reference
-	 * @param column_attributes  returned by reference
-	 */
+    /**
+     * Pull out column name and attributes from AST's column definition clause
+     * @param col                AST column definition
+     * @param column_name        returned by reference
+     * @param column_attributes  returned by reference
+     */
     static void column_definition(const hsql::ColumnDefinition *col, Identifier &column_name, ColumnAttribute &column_attribute);
 };

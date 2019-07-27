@@ -27,17 +27,17 @@ ostream &operator<<(ostream &out, const QueryResult &qres) {
             for (auto const &column_name: *qres.column_names) {
                 Value value = row->at(column_name);
                 switch (value.data_type) {
-                    case ColumnAttribute::INT:
-                        out << value.n;
-                        break;
-                    case ColumnAttribute::TEXT:
-                        out << "\"" << value.s << "\"";
-                        break;
-            	    case ColumnAttribute::BOOLEAN:
-                        out << (value.n == 0 ? "false" : "true");
-                        break;
-                    default:
-                        out << "???";
+                case ColumnAttribute::INT:
+                    out << value.n;
+                    break;
+                case ColumnAttribute::TEXT:
+                    out << "\"" << value.s << "\"";
+                    break;
+                case ColumnAttribute::BOOLEAN:
+                    out << (value.n == 0 ? "false" : "true");
+                    break;
+                default:
+                    out << "???";
                 }
                 out << " ";
             }
@@ -73,14 +73,14 @@ QueryResult *SQLExec::execute(const SQLStatement *statement) throw(SQLExecError)
 
     try {
         switch (statement->type()) {
-            case kStmtCreate:
-                return create((const CreateStatement *) statement);
-            case kStmtDrop:
-                return drop((const DropStatement *) statement);
-            case kStmtShow:
-                return show((const ShowStatement *) statement);
-            default:
-                return new QueryResult("not implemented");
+        case kStmtCreate:
+            return create((const CreateStatement *) statement);
+        case kStmtDrop:
+            return drop((const DropStatement *) statement);
+        case kStmtShow:
+            return show((const ShowStatement *) statement);
+        default:
+            return new QueryResult("not implemented");
         }
     } catch (DbRelationError& e) {
         throw SQLExecError(string("DbRelationError: ") + e.what());
@@ -93,53 +93,53 @@ void SQLExec::column_definition(const ColumnDefinition *col, Identifier& column_
                                 ColumnAttribute& column_attribute) {
     column_name = col->name;
     switch (col->type) {
-        case ColumnDefinition::INT:
-            column_attribute.set_data_type(ColumnAttribute::INT);
-            break;
-        case ColumnDefinition::TEXT:
-            column_attribute.set_data_type(ColumnAttribute::TEXT);
-            break;
-        case ColumnDefinition::DOUBLE:
-        default:
-            throw SQLExecError("unrecognized data type");
+    case ColumnDefinition::INT:
+        column_attribute.set_data_type(ColumnAttribute::INT);
+        break;
+    case ColumnDefinition::TEXT:
+        column_attribute.set_data_type(ColumnAttribute::TEXT);
+        break;
+    case ColumnDefinition::DOUBLE:
+    default:
+        throw SQLExecError("unrecognized data type");
     }
 }
 
 // Parses which create function to call; only supports CREATE TABLE and CREATE INDEX
 QueryResult *SQLExec::create(const CreateStatement *statement) {
     switch(statement->type) {
-        case CreateStatement::kTable:
-            return create_table(statement);
-        case CreateStatement::kIndex:
-            return create_index(statement);
-        default:
-            return new QueryResult("Only CREATE TABLE and CREATE INDEX are implemented");
+    case CreateStatement::kTable:
+        return create_table(statement);
+    case CreateStatement::kIndex:
+        return create_index(statement);
+    default:
+        return new QueryResult("Only CREATE TABLE and CREATE INDEX are implemented");
     }
 }
 
 // Parses which drop function to call; only supports DROP TABLE and DROP INDEX
 QueryResult *SQLExec::drop(const DropStatement *statement) {
     switch(statement->type) {
-        case DropStatement::kTable:
-            return drop_table(statement);
-        case DropStatement::kIndex:
-            return drop_index(statement);
-        default:
-            return new QueryResult("Only DROP TABLE and DROP INDEX are implemented");
+    case DropStatement::kTable:
+        return drop_table(statement);
+    case DropStatement::kIndex:
+        return drop_index(statement);
+    default:
+        return new QueryResult("Only DROP TABLE and DROP INDEX are implemented");
     }
 }
 
 // Displays list of tables, table columns, or indices
 QueryResult *SQLExec::show(const ShowStatement *statement) {
     switch (statement->type) {
-        case ShowStatement::kTables:
-            return show_tables();
-        case ShowStatement::kColumns:
-            return show_columns(statement);
-        case ShowStatement::kIndex:
-            return show_index(statement);
-        default:
-            throw SQLExecError("unrecognized SHOW type");
+    case ShowStatement::kTables:
+        return show_tables();
+    case ShowStatement::kColumns:
+        return show_columns(statement);
+    case ShowStatement::kIndex:
+        return show_index(statement);
+    default:
+        throw SQLExecError("unrecognized SHOW type");
     }
 }
 
@@ -214,8 +214,8 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     DbRelation& table = SQLExec::tables->get_table(table_name);
 
     //drop each index before dropping table...
-     Handles* i_handles = indices->select(&where);
-     for (auto const& handle: *i_handles)
+    Handles* i_handles = indices->select(&where);
+    for (auto const& handle: *i_handles)
         indices->del(handle);
 
     //remove from _columns schema
@@ -233,8 +233,8 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     table.drop();
 
     // finally, remove from _tables schema
-    SQLExec::tables->del(*SQLExec::tables->select(&where)->begin()); // expect only one row from select
-
+    SQLExec::tables->del(*SQLExec::tables->select(&where)->begin());
+    
     return new QueryResult(string("dropped ") + table_name);
 }
 
@@ -249,7 +249,10 @@ QueryResult *SQLExec::show_tables() {
 
     // Retrieve handles
     Handles* handles = SQLExec::tables->select();
-    u_long n = handles->size() - 3; // Get size/number of rows (subtract three to account for tables, columns, and indices schemas)
+
+    // Get size/number of rows (subtract three to account for tables, columns,
+    // and indices schemas)
+    u_long n = handles->size() - 3;
 
     ValueDicts* rows = new ValueDicts;
     for (auto const& handle: *handles) {
@@ -304,7 +307,7 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     bool is_unique = true;
     
     if(index_type == "HASH")
-	is_unique = false;
+        is_unique = false;
     
     // Add to schema
     Handles cHandles;
@@ -345,7 +348,7 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     DbIndex& index = indices->get_index(table_name, index_name);
     index.create();
    
-   return new QueryResult("create index " + index_name);
+    return new QueryResult("create index " + index_name);
 }
 
 // Displays index info
@@ -379,7 +382,9 @@ QueryResult *SQLExec::show_index(const ShowStatement *statement) {
     // Clean up memory
     delete handles;
 
-    return new QueryResult(column_names, column_attributes, entries, "successfully returned " + to_string(size) + " rows");
+    return new QueryResult(column_names, column_attributes, entries,
+                           "successfully returned " + to_string(size)
+                           + " rows");
 }
 
 // Drop the specified index 
@@ -412,10 +417,9 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     delete handles;
     
     if(!failed)    
-        return new QueryResult("dropped index " + index_name + " from " +table_name);
+        return new QueryResult("dropped index " + index_name + " from "
+                               + table_name);
     else
-	return new QueryResult("no matching index to drop");
-   //return new QueryResult("dropped index " + index_name + " from " +table_name);
-
+        return new QueryResult("no matching index to drop");
 }
 
