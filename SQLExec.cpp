@@ -354,8 +354,8 @@ QueryResult *SQLExec::show_index(const ShowStatement *statement) {
     ColumnNames* column_names = new ColumnNames;
     column_names->push_back("table_name");
     column_names->push_back("index_name");
-    column_names->push_back("seq_in_index");
     column_names->push_back("column_name");
+    column_names->push_back("seq_in_index");	
     column_names->push_back("index_type");
     column_names->push_back("is_unique");
     
