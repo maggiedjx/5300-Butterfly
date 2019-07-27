@@ -1,4 +1,4 @@
-# Milestone 3
+# Milestone 3 & 4
 # Makefile, Kevin Lundeen, Seattle University, CPSC5300, Summer 2018
 # 
 CCFLAGS     = -std=c++11 -std=c++0x -Wall -Wno-c++11-compat -DHAVE_CXX_STDHEADERS -D_GNU_SOURCE -D_REENTRANT -O3 -c -ggdb
