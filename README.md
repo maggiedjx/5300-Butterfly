@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 5300-Butterfly
 ## "Project Butterfly" - CPSC 5300 / 4300 Summer 2019
 < < < SQL relation manager and parser program < < <
@@ -324,3 +325,6 @@ TODO
 ### Milestone 6: BTree Index
 
 TODO
+=======
+# sql5300
+>>>>>>> Standardizing files for Milestone 6
