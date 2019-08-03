@@ -9,7 +9,7 @@ Grant Bishop
 Vishakha Bhavsar &
 Alicia Mauldin
 #### Sprint Invierno:
-Nina Nguyen
+Nina Nguyen &
 Maggie Dong
 
 ---
