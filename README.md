@@ -9,8 +9,8 @@ Grant Bishop
 Vishakha Bhavsar &
 Alicia Mauldin
 #### Sprint Invierno:
-Your Name &
-Your Name
+Nina Nguyen
+Maggie Dong
 
 ---
 
