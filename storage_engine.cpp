@@ -1,12 +1,4 @@
-<<<<<<< HEAD
-/**
- * Milestone 3 & 4
- * Extends storage_engine.h abstract functionality
- */
-
-=======
 #include <algorithm>
->>>>>>> Standardizing files for Milestone 6
 #include "storage_engine.h"
 
 bool Value::operator==(const Value &other) const {
@@ -21,8 +13,6 @@ bool Value::operator!=(const Value &other) const {
     return !(*this == other);
 }
 
-<<<<<<< HEAD
-=======
 bool Value::operator<(const Value &other) const {
     if (this->data_type != other.data_type) {
         // arbitrary ordering of data types: BOOLEAN < INT < TEXT
@@ -56,7 +46,6 @@ ColumnAttributes* DbRelation::get_column_attributes(const ColumnNames &select_co
     return ret;
 }
 
->>>>>>> Standardizing files for Milestone 6
 // Just pulls out the column names from a ValueDict and passes that to the usual form of project().
 ValueDict* DbRelation::project(Handle handle, const ValueDict* where) {
     ColumnNames t;
@@ -64,8 +53,6 @@ ValueDict* DbRelation::project(Handle handle, const ValueDict* where) {
         t.push_back(column.first);
     return this->project(handle, &t);
 }
-<<<<<<< HEAD
-=======
 
 
 // Do a projection for each of a list of handles
@@ -95,4 +82,3 @@ ValueDicts* DbRelation::project(Handles *handles, const ValueDict* where) {
     return ret;
 }
 
->>>>>>> Standardizing files for Milestone 6

@@ -1,18 +1,11 @@
 /**
-<<<<<<< HEAD
- * Milestone 3 & 4
-=======
->>>>>>> Standardizing files for Milestone 6
  * @file schema_tables.cpp - implementation of schema table classes
  * @author Kevin Lundeen
  * @see "Seattle University, CPSC5300, Summer 2018"
  */
 #include "schema_tables.h"
 #include "ParseTreeToString.h"
-<<<<<<< HEAD
-=======
 #include "btree.h"
->>>>>>> Standardizing files for Milestone 6
 
 
 void initialize_schema_tables() {
@@ -22,15 +15,9 @@ void initialize_schema_tables() {
     Columns columns;
     columns.create_if_not_exists();
     columns.close();
-<<<<<<< HEAD
-    Indices indices;
-    indices.create_if_not_exists();
-    indices.close();
-=======
 	Indices indices;
 	indices.create_if_not_exists();
 	indices.close();
->>>>>>> Standardizing files for Milestone 6
 }
 
 // Not terribly useful since the parser weeds most of these out
@@ -97,13 +84,8 @@ void Tables::create() {
     insert(&row);
     row["table_name"] = Value("_columns");
     insert(&row);
-<<<<<<< HEAD
-    row["table_name"] = Value("_indices");
-    insert(&row);
-=======
 	row["table_name"] = Value("_indices");
 	insert(&row);
->>>>>>> Standardizing files for Milestone 6
 }
 
 // Manually check that table_name is unique.
@@ -350,10 +332,6 @@ void Indices::del(Handle handle) {
         Indices::index_cache.erase(cache_key);
         delete index;
     }
-<<<<<<< HEAD
-    delete row;
-=======
->>>>>>> Standardizing files for Milestone 6
     HeapTable::del(handle);
 }
 
@@ -415,11 +393,7 @@ DbIndex& Indices::get_index(Identifier table_name, Identifier index_name) {
     if (is_hash) {
         index = new DummyIndex(table, index_name, column_names, is_unique);  // FIXME - change to HashIndex
     } else {
-<<<<<<< HEAD
-        index = new DummyIndex(table, index_name, column_names, is_unique);  // FIXME - change to BTreeIndex
-=======
         index = new BTreeIndex(table, index_name, column_names, is_unique);
->>>>>>> Standardizing files for Milestone 6
     }
     Indices::index_cache[cache_key] = index;
     return *index;
@@ -439,7 +413,3 @@ IndexNames Indices::get_index_names(Identifier table_name) {
     delete handles;
     return ret;
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> Standardizing files for Milestone 6
