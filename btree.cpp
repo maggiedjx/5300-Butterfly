@@ -114,4 +114,5 @@ KeyValue *BTreeIndex::tkey(const ValueDict *key) const {
 
 bool test_btree(){
 	//TODO
+	return false;
 }
